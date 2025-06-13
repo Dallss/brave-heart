@@ -5,8 +5,6 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
-
 defineProps({
   height: {
     type: String,
@@ -21,5 +19,6 @@ defineProps({
   padding: 2rem;
   box-sizing: border-box;
   background-color: #fff;
+  padding-bottom: 50px;
 }
 </style>

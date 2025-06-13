@@ -3,11 +3,14 @@ import HeadSection from './components/sections/HeadSection.vue'
 import TypesSection from './components/sections/TypesSection.vue'
 import HowToUseSection from './components/sections/HowToUseSection.vue'
 import FaqSection from './components/sections/FaqSection.vue'
+import AboutUsSection from './components/sections/AboutUsSection.vue'
 </script>
 
 <template>
   <div class="app-wrapper">
-    <div class="header"></div>
+    <div class="header">
+      <button class="cart-button"></button>
+    </div>
     <div class="nav-hover-zone">
       <div class="nav">
         <div class="link">
@@ -27,6 +30,7 @@ import FaqSection from './components/sections/FaqSection.vue'
 
     <HowToUseSection id="how-to-use" />
     <FaqSection id="faq" />
+    <AboutUsSection id="about-us" />
   </div>
 </template>
 
@@ -53,10 +57,25 @@ body,
   color: black;
 }
 
+.cart-button {
+  height: 40%;
+  aspect-ratio: 1 / 1;
+  background-image: url('/shopping-cart.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin-left: auto;
+  border: none;
+  background-color: transparent;
+}
+
 .header {
   height: 70px;
   width: 100%;
   background-color: black;
+  display: flex;
+  align-items: center;
+  padding-right: 20px;
 }
 
 .nav-hover-zone {
