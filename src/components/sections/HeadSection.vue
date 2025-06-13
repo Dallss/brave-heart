@@ -23,7 +23,7 @@
           <h2 class="type-selector-title">Select your use case</h2>
           <h4>
             Suggested Extinguisher Class:
-            <span style="font-weight: 600">{{ extinguisherType }}</span>
+            <span style="font-weight: 600">{{ extinguisherType.join(', ') }}</span>
           </h4>
           <TypeSelector class="type-selector" v-model:selected="extinguisherType" />
         </div>

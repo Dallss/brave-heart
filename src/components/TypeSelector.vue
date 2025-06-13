@@ -38,24 +38,31 @@ const cases = [
   'other',
 ]
 
+// Based on DTI info:
+// - ABC: multi-purpose for solids, liquids, gases, electrical
+// - A: solids like paper, cloth, wood
+// - B: flammable liquids
+// - C: electrical equipment
+// - K: kitchen fires (cooking oil, fats)
+
 const useCaseToExtinguisherTypes = {
-  general: 'ABC',
-  school: 'A',
-  office: 'B',
-  home: 'ABC',
-  industrial: 'ABC',
-  kitchen: 'K',
-  garage: 'ABC',
-  warehouse: 'ABC',
-  hospital: 'ABC',
-  hotel: 'ABC',
-  restaurant: 'ABC',
-  bar: 'ABC',
-  other: 'ABC',
+  general: ['A', 'B', 'C'],
+  school: ['A', 'C'],
+  office: ['B', 'C'],
+  home: ['A', 'B', 'C'],
+  industrial: ['A', 'B', 'C'],
+  kitchen: ['K'],
+  garage: ['B', 'C'],
+  warehouse: ['A', 'B', 'C'],
+  hospital: ['C'],
+  hotel: ['A', 'B', 'C'],
+  restaurant: ['K', 'B', 'C'],
+  bar: ['B', 'C'],
+  other: ['A', 'B', 'C'],
 }
 
 const selectedExtinguisherTypes = computed(() => {
-  return useCaseToExtinguisherTypes[selectedCase.value] || 'unkown'
+  return useCaseToExtinguisherTypes[selectedCase.value] || ['unknown']
 })
 </script>
 
