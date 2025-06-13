@@ -20,7 +20,7 @@
             <div class="keen-slider__slide" v-for="(type, index) in normalizedTypes" :key="index">
               <img
                 class="extinguisher-image"
-                :src="`/fire-extinguisher/${type}.png`"
+                :src="getExtinguisherImage(type)"
                 :alt="`Extinguisher ${type}`"
               />
             </div>
@@ -51,13 +51,31 @@ import KeenSlider from 'keen-slider'
 import BaseSection from './BaseSection.vue'
 import TypeSelector from '../TypeSelector.vue'
 
-const extinguisherType = ref(['A'])
+const extinguisherType = ref(['A', 'B', 'C'])
 const sliderRef = ref(null)
 let sliderInstance = null
 
 const normalizedTypes = computed(() =>
   Array.isArray(extinguisherType.value) ? extinguisherType.value : [extinguisherType.value],
 )
+
+import imgA from '@/assets/fire-extinguisher/A.png'
+import imgB from '@/assets/fire-extinguisher/B.png'
+import imgC from '@/assets/fire-extinguisher/C.png'
+import imgD from '@/assets/fire-extinguisher/D.png'
+import imgK from '@/assets/fire-extinguisher/K.png'
+
+const imageMap = {
+  A: imgA,
+  B: imgB,
+  C: imgC,
+  D: imgD,
+  K: imgK,
+}
+
+const getExtinguisherImage = (type) => {
+  return imageMap[type] || imgA
+}
 
 const initSlider = () => {
   if (sliderInstance) {
