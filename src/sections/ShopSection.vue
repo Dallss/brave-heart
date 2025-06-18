@@ -1,6 +1,6 @@
 <template>
   <BaseSection class="shop-section" height="auto">
-    <div class="header">Shop</div>
+    <div class="shop-header">Shop</div>
     <div class="items-container">
       <div class="item" v-for="item in items" :key="item.id">
         <Item :item="item" />
@@ -51,20 +51,24 @@ const items = [
   display: flex;
   flex-direction: column;
   color: black;
+  background-color: #f5f5f5;
 }
-.header {
+.shop-header {
   font-size: 2.5rem;
   font-weight: 600;
   color: #000000;
-  background-color: white;
   margin-bottom: 2rem;
   font-family: fjalla-one;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
 }
 .items-container {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+}
+.item {
+  flex: 1 1 280px; /* Flex-grow: 1, shrink: 1, base width: 280px */
+  min-width: 180px; /* Won’t shrink smaller than this */
+  max-width: 320px;
 }
 </style>

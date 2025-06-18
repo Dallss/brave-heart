@@ -24,18 +24,18 @@ export default {
 </script>
 <style scoped>
 .item {
-  margin: 0.5rem;
-  padding: 1rem;
-  width: 280px;
+  width: 100%;
   height: 470px;
   background-color: rgba(217, 217, 217, 0.06);
   color: black;
   box-shadow: 2px 2px 5px 1px rgba(0, 0, 0, 0.25);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
 }
+
 img {
   width: 100%;
   height: 65%;

@@ -96,10 +96,10 @@ h3 {
   cursor: pointer;
   border: 1px solid black;
   padding: 1rem;
-  border-radius: 1rem;
+  border-radius: 5px;
   background-color: white;
   flex-shrink: 0;
-  height: 45px;
+  height: 35px;
 }
 
 .type-selector-item input[type='radio'] {

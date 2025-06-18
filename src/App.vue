@@ -12,7 +12,7 @@ import ShopSection from './sections/ShopSection.vue'
     <div class="header">
       <button class="cart-button"></button>
     </div>
-    <div class="nav-hover-zone">
+    <!-- <div class="nav-hover-zone">
       <div class="nav">
         <div class="link">
           <a href="#types">Types</a>
@@ -24,7 +24,7 @@ import ShopSection from './sections/ShopSection.vue'
           <a href="#">About Us</a>
         </div>
       </div>
-    </div>
+    </div> -->
     <HeadSection />
 
     <ShopSection id="shop" />
@@ -73,9 +73,9 @@ body,
 }
 
 .header {
-  height: 70px;
+  height: 60px;
   width: 100%;
-  background-color: black;
+  background-color: #000;
   display: flex;
   align-items: center;
   padding-right: 20px;
@@ -88,8 +88,8 @@ body,
   height: 150px;
   z-index: 10;
 }
-
-.nav {
+/* TODO: Remove */
+/* .nav {
   height: 0px;
   margin-top: 70px;
   width: 100%;
@@ -98,7 +98,7 @@ body,
   overflow: hidden;
   display: flex;
   padding-left: 20px;
-}
+} */
 
 .nav-hover-zone:hover .nav {
   height: 30px;
