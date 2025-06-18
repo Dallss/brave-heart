@@ -71,7 +71,7 @@ const selectedExtinguisherTypes = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  width: 100%;
+  width: 80%;
   height: 90%;
   overflow-y: auto;
   padding: 1rem;

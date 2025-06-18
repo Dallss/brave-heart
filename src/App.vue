@@ -1,9 +1,10 @@
 <script setup>
-import HeadSection from './components/sections/HeadSection.vue'
-import TypesSection from './components/sections/TypesSection.vue'
-import HowToUseSection from './components/sections/HowToUseSection.vue'
-import FaqSection from './components/sections/FaqSection.vue'
-import AboutUsSection from './components/sections/AboutUsSection.vue'
+import HeadSection from './sections/HeadSection.vue'
+import TypesSection from './sections/TypesSection.vue'
+import HowToUseSection from './sections/HowToUseSection.vue'
+import FaqSection from './sections/FaqSection.vue'
+import AboutUsSection from './sections/AboutUsSection.vue'
+import ShopSection from './sections/ShopSection.vue'
 </script>
 
 <template>
@@ -26,6 +27,7 @@ import AboutUsSection from './components/sections/AboutUsSection.vue'
     </div>
     <HeadSection />
 
+    <ShopSection id="shop" />
     <TypesSection id="types" />
 
     <HowToUseSection id="how-to-use" />
@@ -54,6 +56,7 @@ body,
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  width: 100vw;
   color: black;
 }
 

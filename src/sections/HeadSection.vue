@@ -49,7 +49,7 @@
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import KeenSlider from 'keen-slider'
 import BaseSection from './BaseSection.vue'
-import TypeSelector from '../TypeSelector.vue'
+import TypeSelector from '../components/TypeSelector.vue'
 
 const extinguisherType = ref(['A', 'B', 'C'])
 const sliderRef = ref(null)

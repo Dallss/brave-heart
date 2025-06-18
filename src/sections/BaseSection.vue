@@ -19,6 +19,7 @@ defineProps({
   padding: 2rem;
   box-sizing: border-box;
   background-color: #fff;
+  color: #000000;
   padding-bottom: 50px;
 }
 </style>
