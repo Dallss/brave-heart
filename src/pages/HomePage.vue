@@ -1,10 +1,38 @@
-<template>
-  <router-view />
-</template>
-
 <script setup>
-// No imports needed here, all content will be in HomePage.vue
+import HeadSection from '../sections/HeadSection.vue'
+import HowToUseSection from '../sections/HowToUseSection.vue'
+import FaqSection from '../sections/FaqSection.vue'
+import AboutUsSection from '../sections/AboutUsSection.vue'
+import ShopSection from '../sections/ShopSection.vue'
 </script>
+
+<template>
+  <div class="app-wrapper">
+    <div class="header">
+      <button class="cart-button"></button>
+    </div>
+    <!-- <div class="nav-hover-zone">
+      <div class="nav">
+        <div class="link">
+          <a href="#types">Types</a>
+          <span>|</span>
+          <a href="#how-to-use">How to use</a>
+          <span>|</span>
+          <a href="#faq">FAQ</a>
+          <span>|</span>
+          <a href="#">About Us</a>
+        </div>
+      </div>
+    </div> -->
+    <HeadSection />
+
+    <ShopSection id="shop" />
+
+    <HowToUseSection id="how-to-use" />
+    <FaqSection id="faq" />
+    <AboutUsSection id="about-us" />
+  </div>
+</template>
 
 <style>
 html,
