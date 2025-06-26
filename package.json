@@ -16,7 +16,8 @@
     "keen-slider": "^6.8.6",
     "npm": "^11.4.2",
     "pinia": "^3.0.1",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

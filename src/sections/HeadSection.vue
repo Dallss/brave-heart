@@ -139,7 +139,7 @@ const nextSlide = () => {
   flex-wrap: wrap;
 }
 .page-part {
-  height: 100vh;
+  height: 110vh;
   width: 100%;
   flex: 1;
   position: relative;

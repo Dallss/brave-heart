@@ -4,12 +4,10 @@
 
     <div class="details">
       <p class="class">Class {{ item.class }}</p>
-      <p class="price">₱ {{ item.price }}</p>
       <p class="stock">In-stock: {{ item.stock }}</p>
+
+      <p class="price">₱ {{ item.range }}</p>
     </div>
-    <button class="addToCart">
-      <icon-lucide-shopping-cart class="shop-icon" />
-    </button>
   </div>
 </template>
 <script>
@@ -29,6 +27,7 @@ export default {
   background-color: rgba(217, 217, 217, 0.06);
   color: black;
   box-shadow: 2px 2px 5px 1px rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -41,15 +40,6 @@ img {
   height: 65%;
   object-fit: contain;
 }
-.addToCart {
-  width: 100%;
-  height: 45px;
-  box-sizing: border-box;
-  background-color: #1f671d;
-  margin-top: auto;
-  border: none;
-  cursor: pointer;
-}
 .addToCart:hover {
   background-color: #287226;
 }
@@ -61,9 +51,13 @@ img {
 .details {
   align-self: flex-start;
   padding: 1rem;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 .class,
-.price,
 .stock {
   font-family: Montserrat;
   margin: 0;
@@ -77,5 +71,10 @@ img {
 .stock {
   font-size: 18px;
   font-weight: 400;
+}
+
+.price {
+  margin-top: auto;
+  color: rgb(145, 72, 0);
 }
 </style>

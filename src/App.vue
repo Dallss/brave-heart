@@ -28,7 +28,6 @@ import ShopSection from './sections/ShopSection.vue'
     <HeadSection />
 
     <ShopSection id="shop" />
-    <TypesSection id="types" />
 
     <HowToUseSection id="how-to-use" />
     <FaqSection id="faq" />
@@ -73,7 +72,7 @@ body,
 }
 
 .header {
-  height: 60px;
+  height: 55px;
   width: 100%;
   background-color: #000;
   display: flex;
