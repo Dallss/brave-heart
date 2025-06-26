@@ -58,15 +58,7 @@
   background: #3a0e0e;
   color: #fff;
 }
-.dashboard-content {
-  flex: 1;
-  background: #e5e5e5;
-  padding: 2.5rem 2rem;
-  border-radius: 18px;
-  margin: 2rem;
-  display: flex;
-  flex-direction: column;
-}
+
 .dashboard-header {
   margin-bottom: 1.5rem;
   border-bottom: 2px solid #bdbdbd;
