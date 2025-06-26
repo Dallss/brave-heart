@@ -19,23 +19,38 @@
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
 const username = ref('')
 const password = ref('')
 const error = ref('')
 
-function handleLogin() {
+async function handleLogin() {
   if (!username.value || !password.value) {
     error.value = 'Both fields are required.'
     return
   }
+
   error.value = ''
-  // Simulate admin login (replace with real logic as needed)
-  if (username.value === 'admin' && password.value === 'admin') {
-    localStorage.setItem('isAdmin', 'true')
-    window.location.href = '/admin/dashboard'
-  } else {
-    error.value = 'Invalid credentials.'
+  try {
+    const response = await axios.post(`${BACKEND_BASE_URL}/User/login`, {
+      email: username.value,
+      password: password.value,
+    })
+
+    const token = response.data.token
+    const isAdmin = response.data.isAdmin
+
+    localStorage.setItem('token', token)
+    localStorage.setItem('isAdmin', isAdmin)
+
+    if (isAdmin) {
+      window.location.href = '/admin/dashboard'
+    }
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Login failed. Please try again.'
   }
 }
 </script>
