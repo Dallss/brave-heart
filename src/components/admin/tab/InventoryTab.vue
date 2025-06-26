@@ -2,11 +2,24 @@
   <main class="dashboard-content">
     <div class="dashboard-header">
       <h2>Inventory</h2>
+      <div class="dashboard-header-right">
+        <button @click="showAddItem = true">Add Item</button> |
+        <button @click="showNewType = true">New Type</button>
+      </div>
     </div>
+    <AddItemModal :show="showAddItem" @close="showAddItem = false" />
+    <NewTypeModal :show="showNewType" @close="showNewType = false" />
   </main>
 </template>
 
-<script setup></script>
+<script setup>
+import { ref } from 'vue'
+import AddItemModal from '../modals/AddItemModal.vue'
+import NewTypeModal from '../modals/NewTypeModal.vue'
+
+const showAddItem = ref(false)
+const showNewType = ref(false)
+</script>
 
 <style scoped>
 .admin-dashboard {
@@ -68,9 +81,14 @@
   flex-direction: column;
 }
 .dashboard-header {
+  display: flex;
   margin-bottom: 1.5rem;
   border-bottom: 2px solid #bdbdbd;
   padding-bottom: 0.7rem;
+}
+.dashboard-header-right {
+  margin-left: auto;
+  align-self: flex-end;
 }
 .dashboard-header h2 {
   font-size: 2rem;

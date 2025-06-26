@@ -3,11 +3,11 @@ import HomePage from './pages/HomePage.vue'
 import NotFound from './pages/NotFound.vue'
 import AdminLogin from './pages/AdminLogin.vue'
 import AdminPage from './pages/AdminPage.vue'
-import DashboardTab from './components/admin/DashboardTab.vue'
-import OrdersTab from './components/admin/OrdersTab.vue'
-import InventoryTab from './components/admin/InventoryTab.vue'
-import CalndarTab from './components/admin/CalndarTab.vue'
-import CustomersTab from './components/admin/CustomersTab.vue'
+import DashboardTab from './components/admin/tab/DashboardTab.vue'
+import OrdersTab from './components/admin/tab/OrdersTab.vue'
+import InventoryTab from './components/admin/tab/InventoryTab.vue'
+import CalndarTab from './components/admin/tab/CalndarTab.vue'
+import CustomersTab from './components/admin/tab/CustomersTab.vue'
 
 const routes = [
   { path: '/', component: HomePage },
