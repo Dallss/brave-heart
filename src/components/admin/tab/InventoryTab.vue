@@ -7,18 +7,59 @@
         <button @click="showNewType = true">New Type</button>
       </div>
     </div>
+
+    <ErrorMessage v-if="error" :message="error" :show-retry="true" @retry="loadProducts" />
+
+    <LoadingIndicator v-else-if="loading" message="Loading inventory..." />
+
+    <div v-else-if="products" class="inventory-content">
+      <!-- Inventory content will go here -->
+      <p>Products loaded: {{ products.length || 0 }} items</p>
+    </div>
+
     <AddItemModal :show="showAddItem" @close="showAddItem = false" />
     <NewTypeModal :show="showNewType" @close="showNewType = false" />
   </main>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import AddItemModal from '../modals/AddItemModal.vue'
 import NewTypeModal from '../modals/NewTypeModal.vue'
+import LoadingIndicator from '../../LoadingIndicator.vue'
+import ErrorMessage from '../../ErrorMessage.vue'
 
 const showAddItem = ref(false)
 const showNewType = ref(false)
+
+const products = ref(null)
+const error = ref(null)
+const loading = ref(true)
+
+watch(products, (newValue) => {
+  console.log(`Products: ${newValue}`)
+})
+
+const loadProducts = async () => {
+  loading.value = true
+  error.value = null
+
+  try {
+    const response = await fetch('https://api.example.com/data')
+    if (!response.ok) throw new Error('Network error')
+
+    products.value = await response.json()
+  } catch (err) {
+    error.value = err.message
+    console.error('Fetch error:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadProducts()
+})
 </script>
 
 <style scoped>
@@ -71,7 +112,16 @@ const showNewType = ref(false)
   background: #3a0e0e;
   color: #fff;
 }
-
+.dashboard-content {
+  flex: 1;
+  background: #e5e5e5;
+  padding: 2.5rem 2rem;
+  border-radius: 18px;
+  margin: 2rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
 .dashboard-header {
   display: flex;
   margin-bottom: 1.5rem;
@@ -138,5 +188,8 @@ const showNewType = ref(false)
   color: #5a1818;
   font-weight: 600;
   background: #f7f7f7;
+}
+.inventory-content {
+  flex: 1;
 }
 </style>
