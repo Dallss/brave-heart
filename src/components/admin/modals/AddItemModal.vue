@@ -32,12 +32,17 @@
           @drop.prevent="handleDrop($event, form)"
           @click="fileInput?.click()"
         >
-          <div v-if="form.imageFile" class="selected-file">
-            <span>{{ form.imageFile.name }}</span>
+          <div v-if="uploading" class="uploading">
+            <span>Uploading image...</span>
           </div>
-          <!-- <div v-else class="placeholder">
+          <div v-else-if="form.imageFile" class="selected-file">
+            <span>{{ form.imageFile.name }}</span>
+            <div v-if="form.imageUrl" class="upload-success">✓ Uploaded successfully</div>
+            <div v-else class="image-selected">✓ Image selected (will upload on submit)</div>
+          </div>
+          <div v-else class="placeholder">
             <span>Drag and drop or click to choose an image</span>
-         </div> -->
+          </div>
           <input
             ref="fileInput"
             type="file"
@@ -68,33 +73,42 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
 const fileInput = ref(null) // Reference to hidden file input
 const props = defineProps({ show: Boolean })
 const emit = defineEmits(['close', 'submit'])
 
-// Mock product types and their attributes
-const productTypes = ref([
-  {
-    id: 1,
-    name: 'Fire Extinguisher',
-    attributes: [
-      { id: 1, name: 'Capacity', dataType: 'decimal' },
-      { id: 2, name: 'Color', dataType: 'string' },
-      { id: 3, name: 'Weight', dataType: 'decimal' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Smoke Detector',
-    attributes: [
-      { id: 4, name: 'Battery Life', dataType: 'int' },
-      { id: 5, name: 'Sensor Type', dataType: 'string' },
-    ],
-  },
-])
+const productTypes = ref([])
+const loading = ref(false)
+const error = ref(null)
+const uploading = ref(false)
 
+async function fetchProductTypes() {
+  loading.value = true
+  try {
+    const response = await fetch(`${BACKEND_BASE_URL}/ProductType`)
+    if (!response.ok) throw new Error('Failed to fetch product types')
+
+    const data = await response.json()
+    productTypes.value = data
+  } catch (err) {
+    error.value = err.message || 'Unexpected error'
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(() => {
+  if (props.show) fetchProductTypes()
+})
+watch(
+  () => props.show,
+  (val) => {
+    if (val) fetchProductTypes()
+  },
+)
 const selectedType = ref(null)
 
 function createForm() {
@@ -134,12 +148,109 @@ function validateForm(form) {
 
 function onTypeChange(form) {
   const type = productTypes.value.find((t) => t.id === form.productTypeId)
+  console.log('onTypeChange - found type:', type)
+  console.log('onTypeChange - productTypes:', productTypes.value)
+  console.log('onTypeChange - form.productTypeId:', form.productTypeId)
   selectedType.value = type
   // Reset attribute values to match the selected type
   form.attributeValues = type ? type.attributes.map(() => '') : []
 }
 
-function onImageChange(e, form) {
+async function uploadToCloudinary(file) {
+  try {
+    // Step 1: Get signature from backend
+    const timestamp = Math.round(new Date().getTime() / 1000)
+
+    console.log('Requesting signature with timestamp:', timestamp)
+
+    const signatureResponse = await fetch(
+      `${BACKEND_BASE_URL}/Cloudinary/signature?timestamp=${timestamp}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (!signatureResponse.ok) {
+      throw new Error('Failed to get upload signature')
+    }
+
+    const signatureData = await signatureResponse.json()
+    console.log('Received signature data:', signatureData)
+
+    // Validate signature data
+    if (
+      !signatureData.apiKey ||
+      !signatureData.timestamp ||
+      !signatureData.signature ||
+      !signatureData.cloudName
+    ) {
+      console.error('Missing required signature data:', {
+        hasApiKey: !!signatureData.apiKey,
+        hasTimestamp: !!signatureData.timestamp,
+        hasSignature: !!signatureData.signature,
+        hasCloudName: !!signatureData.cloudName,
+      })
+      throw new Error('Invalid signature data received from backend')
+    }
+
+    // Step 2: Create FormData for Cloudinary upload
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('api_key', signatureData.apiKey)
+    formData.append('timestamp', signatureData.timestamp)
+    formData.append('signature', signatureData.signature)
+    // Note: Not adding folder since backend doesn't return it
+
+    // Log what we're sending to Cloudinary
+    console.log('Uploading to Cloudinary with:', {
+      apiKey: signatureData.apiKey,
+      timestamp: signatureData.timestamp,
+      signature: signatureData.signature,
+      cloudName: signatureData.cloudName,
+      fileName: file.name,
+      fileSize: file.size,
+    })
+
+    // Log the actual FormData entries for debugging
+    console.log('FormData entries:')
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value)
+    }
+
+    // Step 3: Upload to Cloudinary
+    const uploadResponse = await fetch(
+      `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+    )
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text()
+      console.error('Cloudinary upload failed:', {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        response: errorText,
+      })
+      throw new Error(
+        `Failed to upload to Cloudinary: ${uploadResponse.status} ${uploadResponse.statusText}`,
+      )
+    }
+
+    const uploadResult = await uploadResponse.json()
+    console.log('Cloudinary upload successful:', uploadResult)
+    return uploadResult.secure_url
+  } catch (err) {
+    console.error('Cloudinary upload error:', err)
+    throw new Error('Failed to upload image: ' + err.message)
+  }
+}
+
+async function onImageChange(e, form) {
   const file = e.target.files[0]
 
   if (!file) {
@@ -156,11 +267,7 @@ function onImageChange(e, form) {
   }
 
   form.imageFile = file
-
-  // Optional: placeholder for upload logic
-  // Example: Get a presigned URL from backend, upload to S3/Cloudinary, then set imageUrl
-  // const uploadedUrl = await uploadToCloud(file);
-  // form.imageUrl = uploadedUrl;
+  form.imageUrl = '' // Clear any previous URL since we haven't uploaded yet
 
   // Reset input so user can re-select the same file if needed
   e.target.value = ''
@@ -174,8 +281,88 @@ function handleDrop(e, form) {
   }
 }
 
-function handleSubmit(data) {
-  emit('submit', data)
+async function handleSubmit(data) {
+  console.log('handleSubmit - data:', data)
+  console.log('handleSubmit - selectedType:', selectedType.value)
+  console.log('handleSubmit - productTypes:', productTypes.value)
+
+  // Upload image to Cloudinary if a file is selected
+  if (data.imageFile) {
+    uploading.value = true
+    try {
+      const secureUrl = await uploadToCloudinary(data.imageFile)
+      data.imageUrl = secureUrl
+      console.log('Image uploaded successfully:', secureUrl)
+    } catch (err) {
+      console.error('Upload failed:', err)
+      // Notify user but continue with submission
+      alert(
+        'Warning: Image upload failed, but the product will still be created. Error: ' +
+          err.message,
+      )
+      data.imageUrl = '' // Set empty URL if upload fails
+    } finally {
+      uploading.value = false
+    }
+  }
+
+  // Submit to backend
+  try {
+    // Validate that selectedType and attributes exist
+    if (
+      !selectedType.value ||
+      !selectedType.value.attributes ||
+      !Array.isArray(selectedType.value.attributes)
+    ) {
+      throw new Error('Product type or attributes not properly loaded. Please try again.')
+    }
+
+    // Transform attributeValues to match backend DTO structure
+    const attributeValues = data.attributeValues.map((value, index) => {
+      const attribute = selectedType.value.attributes[index]
+      if (!attribute || !attribute.id) {
+        throw new Error(`Attribute at index ${index} is missing or invalid. Please try again.`)
+      }
+      return {
+        ProductAttributeId: attribute.id,
+        Value: value,
+      }
+    })
+
+    const token = localStorage.getItem('token')
+
+    const response = await fetch(`${BACKEND_BASE_URL}/Product`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        productTypeId: data.productTypeId,
+        price: data.price,
+        stock: data.stock,
+        imageUrl: data.imageUrl, // Changed from 'image' to 'imageUrl' to match DTO
+        attributeValues: attributeValues,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to create product: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    console.log('Product created successfully:', result)
+
+    // Emit success event to parent component
+    emit('submit', { success: true, data: result })
+
+    // Close the modal
+    emit('close')
+  } catch (err) {
+    console.error('Failed to create product:', err)
+    alert('Failed to create product: ' + err.message)
+    emit('submit', { success: false, error: err.message })
+  }
 }
 </script>
 
@@ -301,5 +488,24 @@ function handleSubmit(data) {
 
 .hidden-input {
   display: none;
+}
+
+.uploading {
+  color: #a36a6a;
+  font-size: 0.95rem;
+}
+
+.upload-success {
+  color: #28a745;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.image-selected {
+  color: #28a745;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-weight: 500;
 }
 </style>

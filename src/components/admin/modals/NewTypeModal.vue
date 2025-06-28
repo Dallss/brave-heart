@@ -8,6 +8,7 @@
     @submit="handleSubmit"
   >
     <template #default="{ form }">
+      <div v-if="error" class="error-message">{{ error }}</div>
       <label>Name</label>
       <input v-model="form.name" type="text" required placeholder="Type name" />
 
@@ -23,6 +24,9 @@
             <option value="DateTime">Date</option>
             <option value="bool">True/False</option>
           </select>
+          <label style="margin-left: 8px; font-size: 0.95em">
+            <input type="checkbox" v-model="attr.isRequired" /> Required
+          </label>
           <button
             type="button"
             @click="() => removeAttribute(form, index)"
@@ -46,8 +50,14 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import axios from 'axios'
+
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+
 const props = defineProps({ show: Boolean })
 const emit = defineEmits(['close', 'submit'])
+const error = ref('')
 
 function createForm() {
   return {
@@ -65,19 +75,49 @@ function addAttribute(form) {
   form.attributes.push({
     name: '',
     dataType: '',
+    isRequired: false,
   })
 }
 
 function removeAttribute(form, index) {
   form.attributes.splice(index, 1)
 }
+const token = localStorage.getItem('token')
 
-function handleSubmit(data) {
-  emit('submit', data)
+async function handleSubmit(data) {
+  error.value = ''
+  try {
+    // Only send name and attributes (with name, dataType, isRequired)
+    const payload = {
+      name: data.name,
+      attributes: data.attributes.map((attr) => ({
+        name: attr.name,
+        dataType: attr.dataType,
+        isRequired: !!attr.isRequired,
+      })),
+    }
+    await axios.post(`${BACKEND_BASE_URL}/ProductType`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    emit('submit', data)
+    alert('Successfully created new type!')
+    emit('close')
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to create product type.'
+  }
 }
 </script>
 
 <style scoped>
+.error-message {
+  color: #b00;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
