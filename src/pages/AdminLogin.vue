@@ -11,21 +11,29 @@
         <label for="password">Password</label>
         <input id="password" v-model="password" type="password" placeholder="Enter password" />
       </div>
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" v-model="rememberMe" />
+          Remember me
+        </label>
+      </div>
       <div v-if="error" class="error">{{ error }}</div>
-      <button type="submit">Login</button>
+      <button type="submit" :disabled="loading">
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
     </form>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import { useAuth } from '../composables/useAuth.js'
 
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+const { login, loading, error, clearError } = useAuth()
 
 const username = ref('')
 const password = ref('')
-const error = ref('')
+const rememberMe = ref(false)
 
 async function handleLogin() {
   if (!username.value || !password.value) {
@@ -33,24 +41,19 @@ async function handleLogin() {
     return
   }
 
-  error.value = ''
+  clearError()
+
   try {
-    const response = await axios.post(`${BACKEND_BASE_URL}/User/login`, {
-      email: username.value,
-      password: password.value,
-    })
+    const userData = await login(username.value, password.value, rememberMe.value)
 
-    const token = response.data.token
-    const isAdmin = response.data.isAdmin
-
-    localStorage.setItem('token', token)
-    localStorage.setItem('isAdmin', isAdmin)
-
-    if (isAdmin) {
+    if (userData.isAdmin) {
       window.location.href = '/admin/dashboard'
+    } else {
+      error.value = 'Access denied. Admin privileges required.'
     }
   } catch (err) {
-    error.value = err.response?.data?.message || 'Login failed. Please try again.'
+    // Error is already set by the useAuth composable
+    console.error('Login failed:', err)
   }
 }
 </script>
@@ -105,6 +108,16 @@ input {
   border-radius: 4px;
   font-size: 1rem;
 }
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.checkbox-label input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}
 button {
   background: rgb(99, 0, 0);
   color: #fff;
@@ -117,8 +130,12 @@ button {
   margin-top: 0.5rem;
   transition: background 0.2s;
 }
-button:hover {
+button:hover:not(:disabled) {
   background: #900;
+}
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 .error {
   color: #b00;

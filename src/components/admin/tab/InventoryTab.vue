@@ -28,15 +28,16 @@ import AddItemModal from '../modals/AddItemModal.vue'
 import NewTypeModal from '../modals/NewTypeModal.vue'
 import LoadingIndicator from '../../LoadingIndicator.vue'
 import ErrorMessage from '../../ErrorMessage.vue'
+import { apiClient } from '../../../utils/auth.js'
 
 const showAddItem = ref(false)
 const showNewType = ref(false)
 
-const products = ref(null)
+const products = ref([])
 const error = ref(null)
 const loading = ref(true)
 
-watch(products, (newValue) => {
+watch(products.value, (newValue) => {
   console.log(`Products: ${newValue}`)
 })
 
@@ -45,10 +46,13 @@ const loadProducts = async () => {
   error.value = null
 
   try {
-    const response = await fetch('https://api.example.com/data')
-    if (!response.ok) throw new Error('Network error')
-
-    products.value = await response.json()
+    const response = await apiClient.get('/ProductType')
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`)
+    }
+    const data = await response.json()
+    products.value = data
+    console.log(data)
   } catch (err) {
     error.value = err.message
     console.error('Fetch error:', err)

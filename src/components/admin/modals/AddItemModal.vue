@@ -74,8 +74,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+import { apiClient } from '../../../utils/auth.js'
 
 const fileInput = ref(null) // Reference to hidden file input
 const props = defineProps({ show: Boolean })
@@ -89,7 +88,7 @@ const uploading = ref(false)
 async function fetchProductTypes() {
   loading.value = true
   try {
-    const response = await fetch(`${BACKEND_BASE_URL}/ProductType`)
+    const response = await apiClient.get('/ProductType')
     if (!response.ok) throw new Error('Failed to fetch product types')
 
     const data = await response.json()
@@ -163,15 +162,7 @@ async function uploadToCloudinary(file) {
 
     console.log('Requesting signature with timestamp:', timestamp)
 
-    const signatureResponse = await fetch(
-      `${BACKEND_BASE_URL}/Cloudinary/signature?timestamp=${timestamp}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    )
+    const signatureResponse = await apiClient.get(`/Cloudinary/signature?timestamp=${timestamp}`)
 
     if (!signatureResponse.ok) {
       throw new Error('Failed to get upload signature')
@@ -216,12 +207,12 @@ async function uploadToCloudinary(file) {
 
     // Log the actual FormData entries for debugging
     console.log('FormData entries:')
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value)
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`)
     }
 
     // Step 3: Upload to Cloudinary
-    const uploadResponse = await fetch(
+    const cloudinaryResponse = await fetch(
       `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`,
       {
         method: 'POST',
@@ -229,24 +220,19 @@ async function uploadToCloudinary(file) {
       },
     )
 
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text()
-      console.error('Cloudinary upload failed:', {
-        status: uploadResponse.status,
-        statusText: uploadResponse.statusText,
-        response: errorText,
-      })
-      throw new Error(
-        `Failed to upload to Cloudinary: ${uploadResponse.status} ${uploadResponse.statusText}`,
-      )
+    if (!cloudinaryResponse.ok) {
+      const errorText = await cloudinaryResponse.text()
+      console.error('Cloudinary upload failed:', errorText)
+      throw new Error(`Cloudinary upload failed: ${cloudinaryResponse.status}`)
     }
 
-    const uploadResult = await uploadResponse.json()
-    console.log('Cloudinary upload successful:', uploadResult)
-    return uploadResult.secure_url
-  } catch (err) {
-    console.error('Cloudinary upload error:', err)
-    throw new Error('Failed to upload image: ' + err.message)
+    const cloudinaryData = await cloudinaryResponse.json()
+    console.log('Cloudinary upload successful:', cloudinaryData)
+
+    return cloudinaryData.secure_url
+  } catch (error) {
+    console.error('Upload to Cloudinary failed:', error)
+    throw error
   }
 }
 
@@ -282,20 +268,15 @@ function handleDrop(e, form) {
 }
 
 async function handleSubmit(data) {
-  console.log('handleSubmit - data:', data)
-  console.log('handleSubmit - selectedType:', selectedType.value)
-  console.log('handleSubmit - productTypes:', productTypes.value)
+  uploading.value = true
 
-  // Upload image to Cloudinary if a file is selected
+  // Upload image if selected
   if (data.imageFile) {
-    uploading.value = true
     try {
-      const secureUrl = await uploadToCloudinary(data.imageFile)
-      data.imageUrl = secureUrl
-      console.log('Image uploaded successfully:', secureUrl)
+      data.imageUrl = await uploadToCloudinary(data.imageFile)
+      console.log('Image uploaded successfully:', data.imageUrl)
     } catch (err) {
-      console.error('Upload failed:', err)
-      // Notify user but continue with submission
+      console.error('Image upload failed:', err)
       alert(
         'Warning: Image upload failed, but the product will still be created. Error: ' +
           err.message,
@@ -329,21 +310,12 @@ async function handleSubmit(data) {
       }
     })
 
-    const token = localStorage.getItem('token')
-
-    const response = await fetch(`${BACKEND_BASE_URL}/Product`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        productTypeId: data.productTypeId,
-        price: data.price,
-        stock: data.stock,
-        imageUrl: data.imageUrl, // Changed from 'image' to 'imageUrl' to match DTO
-        attributeValues: attributeValues,
-      }),
+    const response = await apiClient.post('/Product', {
+      productTypeId: data.productTypeId,
+      price: data.price,
+      stock: data.stock,
+      imageUrl: data.imageUrl, // Changed from 'image' to 'imageUrl' to match DTO
+      attributeValues: attributeValues,
     })
 
     if (!response.ok) {

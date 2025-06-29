@@ -51,9 +51,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+import { apiClient } from '../../../utils/auth.js'
 
 const props = defineProps({ show: Boolean })
 const emit = defineEmits(['close', 'submit'])
@@ -82,7 +80,6 @@ function addAttribute(form) {
 function removeAttribute(form, index) {
   form.attributes.splice(index, 1)
 }
-const token = localStorage.getItem('token')
 
 async function handleSubmit(data) {
   error.value = ''
@@ -96,16 +93,18 @@ async function handleSubmit(data) {
         isRequired: !!attr.isRequired,
       })),
     }
-    await axios.post(`${BACKEND_BASE_URL}/ProductType`, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+
+    const response = await apiClient.post('/ProductType', payload)
+
+    if (!response.ok) {
+      throw new Error(`Failed to create product type: ${response.status} ${response.statusText}`)
+    }
+
     emit('submit', data)
     alert('Successfully created new type!')
     emit('close')
   } catch (err) {
-    error.value = err.response?.data?.message || 'Failed to create product type.'
+    error.value = err.message || 'Failed to create product type.'
   }
 }
 </script>

@@ -13,7 +13,9 @@
           {{ link.name }}
         </button>
       </nav>
-      <button class="logout" @click="logout">Logout</button>
+      <button class="logout" @click="handleLogout" :disabled="loading">
+        {{ loading ? 'Logging out...' : 'Logout' }}
+      </button>
     </aside>
     <router-view />
   </div>
@@ -22,9 +24,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '../composables/useAuth.js'
 
 const router = useRouter()
 const route = useRoute()
+const { logout, loading } = useAuth()
 
 // Sidebar navigation links (easy to replace with axios-fetched data)
 const navLinks = ref([
@@ -39,9 +43,15 @@ function goTo(tab) {
   router.push(tab.url)
 }
 
-function logout() {
-  localStorage.removeItem('isAdmin')
-  window.location.href = '/admin-login'
+async function handleLogout() {
+  try {
+    await logout()
+    // The logout function in authService will handle the redirect
+  } catch (error) {
+    console.error('Logout failed:', error)
+    // Fallback redirect
+    window.location.href = '/admin-login'
+  }
 }
 </script>
 

@@ -8,6 +8,7 @@ import OrdersTab from './components/admin/tab/OrdersTab.vue'
 import InventoryTab from './components/admin/tab/InventoryTab.vue'
 import CalndarTab from './components/admin/tab/CalndarTab.vue'
 import CustomersTab from './components/admin/tab/CustomersTab.vue'
+import { authService } from './utils/auth.js'
 
 const routes = [
   { path: '/', component: HomePage },
@@ -53,7 +54,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.meta.requiresAdmin) {
-    if (localStorage.getItem('isAdmin') === 'true') {
+    if (authService.isAuthenticated() && authService.getUserInfo()?.isAdmin) {
       next()
     } else {
       next('/admin-login')
