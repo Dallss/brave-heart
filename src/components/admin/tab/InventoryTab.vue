@@ -3,8 +3,8 @@
     <div class="dashboard-header">
       <h2>Inventory</h2>
       <div class="dashboard-header-right">
-        <button @click="showAddItem = true">Add Item</button> |
-        <button @click="showNewType = true">New Type</button>
+        <button @click="showAddItem = true" class="add-button">Add Item</button> |
+        <button @click="showNewType = true" class="add-button">New Type</button>
       </div>
     </div>
 
@@ -13,8 +13,22 @@
     <LoadingIndicator v-else-if="loading" message="Loading inventory..." />
 
     <div v-else-if="products" class="inventory-content">
-      <!-- Inventory content will go here -->
-      <p>Products loaded: {{ products.length || 0 }} items</p>
+      <p>Product Types loaded: {{ products.length || 0 }} items</p>
+
+      <div v-for="type in products" :key="type.id" class="type-container">
+        <div class="type-header" @click="toggleType(type.id)">
+          <span class="type-name">{{ type.name }}</span>
+          <span class="type-count">({{ type.products.length }} products)</span>
+          <span class="toggle-icon">{{ expandedTypes.includes(type.id) ? '▼' : '▶' }}</span>
+        </div>
+        <div v-if="expandedTypes.includes(type.id)" class="type-products">
+          <ProductComponent
+            :products="type.products"
+            @edit="handleEditProduct"
+            @delete="handleDeleteProduct"
+          />
+        </div>
+      </div>
     </div>
 
     <AddItemModal :show="showAddItem" @close="showAddItem = false" />
@@ -29,6 +43,7 @@ import NewTypeModal from '../modals/NewTypeModal.vue'
 import LoadingIndicator from '../../LoadingIndicator.vue'
 import ErrorMessage from '../../ErrorMessage.vue'
 import { apiClient } from '../../../utils/auth.js'
+import ProductComponent from '../ProductComponent.vue'
 
 const showAddItem = ref(false)
 const showNewType = ref(false)
@@ -36,6 +51,7 @@ const showNewType = ref(false)
 const products = ref([])
 const error = ref(null)
 const loading = ref(true)
+const expandedTypes = ref([])
 
 watch(products.value, (newValue) => {
   console.log(`Products: ${newValue}`)
@@ -59,6 +75,24 @@ const loadProducts = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const toggleType = (id) => {
+  if (expandedTypes.value.includes(id)) {
+    expandedTypes.value = expandedTypes.value.filter((i) => i !== id)
+  } else {
+    expandedTypes.value.push(id)
+  }
+}
+
+const handleEditProduct = (product) => {
+  console.log('Edit product:', product)
+  // TODO: Implement edit functionality
+}
+
+const handleDeleteProduct = (product) => {
+  console.log('Delete product:', product)
+  // TODO: Implement delete functionality
 }
 
 onMounted(() => {
@@ -117,7 +151,6 @@ onMounted(() => {
   color: #fff;
 }
 .dashboard-content {
-  flex: 1;
   background: #e5e5e5;
   padding: 2.5rem 2rem;
   border-radius: 18px;
@@ -125,6 +158,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   position: relative;
+  /* overflow: scroll; */
 }
 .dashboard-header {
   display: flex;
@@ -135,6 +169,17 @@ onMounted(() => {
 .dashboard-header-right {
   margin-left: auto;
   align-self: flex-end;
+}
+.add-button {
+  border: none;
+  font-weight: 400;
+  font-size: 16px;
+  color: #5a1818;
+  background-color: rgba(255, 255, 255, 0);
+}
+.add-button:hover {
+  font-weight: 550;
+  text-decoration: underline;
 }
 .dashboard-header h2 {
   font-size: 2rem;
@@ -194,6 +239,49 @@ onMounted(() => {
   background: #f7f7f7;
 }
 .inventory-content {
+  color: black;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: scroll;
+}
+.type-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+.type-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+.type-header:hover {
+  background: #e9ecef;
+}
+.type-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #5a1818;
   flex: 1;
+}
+.type-count {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+.toggle-icon {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-left: 1rem;
+  transition: transform 0.2s;
+}
+.type-products {
+  padding: 1rem;
+  background: #fff;
 }
 </style>

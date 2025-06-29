@@ -58,7 +58,7 @@ async function handleLogout() {
 <style scoped>
 .admin-dashboard {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
   background: #dfdfdf;
 }
