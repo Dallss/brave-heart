@@ -1,7 +1,7 @@
 <template>
   <base-section class="how-to-use-section" height="fit-content">
+    <h2 class="how-to-use-title">How to Use a Fire Extinguisher</h2>
     <div class="how-to-use-content">
-      <h2 class="how-to-use-title">How to Use a Fire Extinguisher</h2>
       <iframe
         class="video"
         width="560"
@@ -14,14 +14,19 @@
       >
       </iframe>
 
-      <h2 class="rememeber-head">Just Remember PASS...</h2>
-      <ol class="how-to-use-steps">
-        <li><strong>P</strong> - Pull the pin to break the tamper seal.</li>
-        <li><strong>A</strong> - Aim the nozzle at the base of the fire.</li>
-        <li><strong>S</strong> - Squeeze the handle to release the extinguishing agent.</li>
-        <li><strong>S</strong> - Sweep from side to side until the fire is out.</li>
-      </ol>
-      <p class="how-to-use-note">Tip: Remember the <strong>PASS</strong> technique!</p>
+      <div class="how-to-use-text">
+        <p class="how-to-use-note">
+          Tip: Remember the <strong class="red">PASS</strong> technique!
+        </p>
+        <ol class="how-to-use-steps">
+          <li><strong class="red">P</strong> - Pull the pin to break the tamper seal.</li>
+          <li><strong class="red">A</strong> - Aim the nozzle at the base of the fire.</li>
+          <li>
+            <strong class="red">S</strong> - Squeeze the handle to release the extinguishing agent.
+          </li>
+          <li><strong class="red">S</strong> - Sweep from side to side until the fire is out.</li>
+        </ol>
+      </div>
     </div>
   </base-section>
 </template>
@@ -32,20 +37,16 @@ import BaseSection from './BaseSection.vue'
 
 <style scoped>
 .how-to-use-section {
-  width: 100vw;
-  background: linear-gradient(135deg, #fff1f0, #ffeaea);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 0 5%;
-}
-
-.how-to-use-content {
-  width: 100%;
-  max-width: 900px;
   text-align: left;
-  padding: 2rem 0;
+  padding-top: 200px;
+  padding-bottom: 200px;
+  width: 100%;
+  max-width: 1000px;
 }
 
 .how-to-use-title {
@@ -53,12 +54,13 @@ import BaseSection from './BaseSection.vue'
   font-weight: 600;
   color: black;
   margin-bottom: 1.5rem;
+  align-self: flex-start;
 }
-.rememeber-head {
+/* .rememeber-head {
   color: black;
-  font-size: 2rem;
+  font-size: 1.2rem;
   font-weight: 550;
-}
+} */
 .video {
   margin-bottom: 2rem;
 }
@@ -66,27 +68,36 @@ import BaseSection from './BaseSection.vue'
 .how-to-use-steps {
   list-style: none;
   padding: 0;
-  font-size: 1.25rem;
-  line-height: 1.8;
-  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .how-to-use-steps li {
-  margin-bottom: 1rem;
-  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  /* padding-left: 1.5rem; */
   position: relative;
-}
-
-.how-to-use-steps li::before {
-  content: '🧯';
-  position: absolute;
-  left: 0;
-  top: 2px;
 }
 
 .how-to-use-note {
   font-style: italic;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #555;
+  margin-bottom: 1rem;
+}
+
+.how-to-use-content {
+  display: flex;
+  gap: 2rem;
+}
+
+.how-to-use-text {
+  width: 250px;
+  background-color: rgb(253, 255, 188);
+  padding: 1.1rem;
+}
+
+.red {
+  color: rgb(122, 0, 0);
+  font-weight: 700;
 }
 </style>

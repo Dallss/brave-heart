@@ -3,13 +3,13 @@
     <div class="left page-part">
       <div class="nav">
         <div class="link">
-          <a href="#types">Types</a>
+          <a href="#shop">Shop</a>
           <span>|</span>
           <a href="#how-to-use">How to use</a>
           <span>|</span>
           <a href="#faq">FAQ</a>
           <span>|</span>
-          <a href="#">About Us</a>
+          <a href="#about-us">About Us</a>
         </div>
       </div>
       <div class="page-header">

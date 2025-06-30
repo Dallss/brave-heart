@@ -21,5 +21,8 @@ defineProps({
   background-color: #fff;
   color: #000000;
   padding-bottom: 50px;
+  padding-top: 100px;
+  padding-bottom: 100px;
+  /* border-bottom: 1px solid rgba(0, 0, 0, 0.151); */
 }
 </style>

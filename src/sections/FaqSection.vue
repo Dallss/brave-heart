@@ -59,11 +59,10 @@ import BaseSection from './BaseSection.vue'
 <style scoped>
 .faq-section {
   width: 100vw;
-  background-color: #ffffff;
+  background-color: #e8e8e8;
   color: #000000;
   display: flex;
   justify-content: center;
-  padding: 0 5%;
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
