@@ -19,6 +19,9 @@
           </option>
         </select>
 
+        <label>Name</label>
+        <input v-model="form.name" type="string" required />
+
         <label>Price</label>
         <input v-model="form.price" type="number" required />
 
@@ -54,17 +57,18 @@
 
         <div v-if="selectedType">
           <label>Attributes</label>
-          <div
-            v-for="(attr, index) in selectedType.attributes"
-            :key="attr.id"
-            style="margin-bottom: 8px"
-          >
+          <div v-for="attr in selectedType.attributes" :key="attr.id" style="margin-bottom: 8px">
             <input
-              v-model="form.attributeValues[index]"
+              v-model="form.attributeValues[attr.id]"
               :placeholder="attr.name + ' (' + attr.dataType + ')'"
               :type="attr.dataType === 'int' || attr.dataType === 'decimal' ? 'number' : 'text'"
               required
             />
+          </div>
+          <!-- Debug info -->
+          <div style="font-size: 0.8rem; color: #666; margin-top: 8px">
+            Debug: Selected type: {{ selectedType.name }} (ID: {{ selectedType.id }})
+            <br />Attributes: {{ selectedType.attributes.map((a) => a.name).join(', ') }}
           </div>
         </div>
       </div>
@@ -93,6 +97,35 @@ async function fetchProductTypes() {
 
     const data = await response.json()
     productTypes.value = data
+    console.log('fetchProductTypes - loaded product types:', data)
+
+    // Log each product type and its attributes in detail
+    data.forEach((type, index) => {
+      console.log(`fetchProductTypes - Product Type ${index + 1}:`, {
+        id: type.id,
+        name: type.name,
+        attributes: type.attributes,
+        attributeCount: type.attributes?.length || 0,
+      })
+
+      // Log each attribute in detail
+      if (type.attributes && type.attributes.length > 0) {
+        type.attributes.forEach((attr, attrIndex) => {
+          console.log(`fetchProductTypes - Product Type ${type.name} Attribute ${attrIndex + 1}:`, {
+            id: attr.id,
+            name: attr.name,
+            dataType: attr.dataType,
+            isRequired: attr.isRequired,
+          })
+        })
+      }
+    })
+
+    // Set selectedType to the first product type if modal is open
+    if (props.show && data.length > 0) {
+      console.log('fetchProductTypes - setting selectedType to first type:', data[0])
+      selectedType.value = data[0]
+    }
   } catch (err) {
     error.value = err.message || 'Unexpected error'
   } finally {
@@ -116,32 +149,33 @@ function createForm() {
     Array.isArray(productTypes.value) && productTypes.value.length > 0
       ? productTypes.value[0]
       : null
+  console.log('createForm - firstType:', firstType)
+  console.log('createForm - firstType attributes:', firstType?.attributes)
   selectedType.value = firstType
+  const attributeValues = firstType
+    ? firstType.attributes.reduce((acc, attr) => {
+        acc[attr.id] = ''
+        return acc
+      }, {})
+    : {}
+  console.log('createForm - attributeValues:', attributeValues)
   return {
+    name: '',
     price: 0,
     stock: 0,
     productTypeId: firstType ? firstType.id : '',
     imageUrl: '',
     imageFile: null,
-    attributeValues: firstType ? firstType.attributes.map(() => '') : [],
+    attributeValues: attributeValues,
   }
 }
 
-watch(
-  () => props.show,
-  (val) => {
-    if (val && Array.isArray(productTypes.value) && productTypes.value.length > 0) {
-      // When modal opens, always set selectedType and form.productTypeId to first type
-      selectedType.value = productTypes.value[0]
-    }
-  },
-)
-
 function validateForm(form) {
-  if (!form.productTypeId || !form.price || !form.stock || !form.imageFile) return false
+  if (!form.productTypeId || !form.price || !form.stock || !form.imageFile || form.name == '')
+    return false
   if (!selectedType.value) return false
   return selectedType.value.attributes.every(
-    (attr, i) => form.attributeValues[i] && form.attributeValues[i] !== '',
+    (attr) => form.attributeValues[attr.id] && form.attributeValues[attr.id] !== '',
   )
 }
 
@@ -150,9 +184,29 @@ function onTypeChange(form) {
   console.log('onTypeChange - found type:', type)
   console.log('onTypeChange - productTypes:', productTypes.value)
   console.log('onTypeChange - form.productTypeId:', form.productTypeId)
+  console.log('onTypeChange - type attributes:', type?.attributes)
+
+  // Log each attribute in detail
+  if (type?.attributes && type.attributes.length > 0) {
+    type.attributes.forEach((attr, attrIndex) => {
+      console.log(`onTypeChange - Attribute ${attrIndex + 1}:`, {
+        id: attr.id,
+        name: attr.name,
+        dataType: attr.dataType,
+        isRequired: attr.isRequired,
+      })
+    })
+  }
+
   selectedType.value = type
   // Reset attribute values to match the selected type
-  form.attributeValues = type ? type.attributes.map(() => '') : []
+  form.attributeValues = type
+    ? type.attributes.reduce((acc, attr) => {
+        acc[attr.id] = ''
+        return acc
+      }, {})
+    : {}
+  console.log('onTypeChange - new attributeValues:', form.attributeValues)
 }
 
 async function uploadToCloudinary(file) {
@@ -268,6 +322,14 @@ function handleDrop(e, form) {
 }
 
 async function handleSubmit(data) {
+  console.log('=== handleSubmit START ===')
+  console.log('handleSubmit - data:', data)
+  console.log('handleSubmit - selectedType.value:', selectedType.value)
+  console.log('handleSubmit - selectedType.value?.name:', selectedType.value?.name)
+  console.log('handleSubmit - selectedType.value?.id:', selectedType.value?.id)
+  console.log('handleSubmit - data.productTypeId:', data.productTypeId)
+  console.log('handleSubmit - data.attributeValues:', data.attributeValues)
+
   uploading.value = true
 
   // Upload image if selected
@@ -299,10 +361,29 @@ async function handleSubmit(data) {
     }
 
     // Transform attributeValues to match backend DTO structure
-    const attributeValues = data.attributeValues.map((value, index) => {
-      const attribute = selectedType.value.attributes[index]
+    console.log('handleSubmit - selectedType.value.attributes:', selectedType.value.attributes)
+    console.log(
+      'handleSubmit - selectedType.value.attributes.length:',
+      selectedType.value.attributes.length,
+    )
+
+    // Safety check: Get the correct product type based on the form's productTypeId
+    const correctProductType = productTypes.value.find((t) => t.id === data.productTypeId)
+    console.log('handleSubmit - correctProductType:', correctProductType)
+    console.log('handleSubmit - correctProductType.attributes:', correctProductType?.attributes)
+
+    const attributesToProcess = correctProductType?.attributes || selectedType.value.attributes
+
+    const attributeValues = attributesToProcess.map((attribute) => {
+      const value = data.attributeValues[attribute.id]
+      console.log(
+        `Processing attribute: ${attribute.name} (ID: ${attribute.id}), value: "${value}"`,
+      )
       if (!attribute || !attribute.id) {
-        throw new Error(`Attribute at index ${index} is missing or invalid. Please try again.`)
+        throw new Error(`Attribute is missing or invalid. Please try again.`)
+      }
+      if (!value || value === '') {
+        throw new Error(`Value for attribute "${attribute.name}" is required.`)
       }
       return {
         ProductAttributeId: attribute.id,
@@ -310,13 +391,28 @@ async function handleSubmit(data) {
       }
     })
 
-    const response = await apiClient.post('/Product', {
+    console.log('handleSubmit - selectedType:', selectedType.value)
+    console.log('handleSubmit - selectedType attributes:', selectedType.value.attributes)
+    console.log('handleSubmit - data.attributeValues:', data.attributeValues)
+    console.log('handleSubmit - transformed attributeValues:', attributeValues)
+
+    const requestPayload = {
+      name: data.name,
       productTypeId: data.productTypeId,
       price: data.price,
       stock: data.stock,
-      imageUrl: data.imageUrl, // Changed from 'image' to 'imageUrl' to match DTO
+      imageUrl: data.imageUrl,
       attributeValues: attributeValues,
-    })
+    }
+
+    console.log('handleSubmit - full request payload:', requestPayload)
+    console.log('handleSubmit - productTypeId being sent:', data.productTypeId)
+    console.log(
+      'handleSubmit - attributeValues being sent:',
+      JSON.stringify(attributeValues, null, 2),
+    )
+
+    const response = await apiClient.post('/Product', requestPayload)
 
     if (!response.ok) {
       throw new Error(`Failed to create product: ${response.status} ${response.statusText}`)

@@ -62,7 +62,7 @@ const loadProducts = async () => {
   error.value = null
 
   try {
-    const response = await apiClient.get('/ProductType')
+    const response = await apiClient.get('/Product/by-type')
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`)
     }
