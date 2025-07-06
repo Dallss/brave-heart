@@ -11,7 +11,7 @@
       <div v-if="Array.isArray(productTypes) && productTypes.length === 0">
         <h1>No product types yet</h1>
       </div>
-      <div v-else>
+      <div v-else-if="form">
         <label>Product Type</label>
         <select v-model="form.productTypeId" required @change="onTypeChange(form)">
           <option v-for="type in productTypes" :key="type.id" :value="type.id">
@@ -415,6 +415,8 @@ async function handleSubmit(data) {
     const response = await apiClient.post('/Product', requestPayload)
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Backend error response:', errorText)
       throw new Error(`Failed to create product: ${response.status} ${response.statusText}`)
     }
 

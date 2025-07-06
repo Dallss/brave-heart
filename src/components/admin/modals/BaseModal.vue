@@ -2,57 +2,16 @@
   <div v-if="show" class="modal-overlay">
     <div class="modal">
       <h2 v-if="title">{{ title }}</h2>
-      <form @submit.prevent="handleSubmit">
-        <slot :form="form" :formValid="formValid"></slot>
-        <div class="modal-actions">
-          <slot name="actions" :formValid="formValid">
-            <button type="button" @click="handleClose">Cancel</button>
-            <button type="submit" :disabled="!formValid">Create</button>
-          </slot>
-        </div>
-      </form>
+      <slot></slot>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
-
-const props = defineProps({
+defineProps({
   show: Boolean,
   title: String,
-  createForm: Function,
-  validateForm: Function, // Optional: parent can pass a validation function
 })
-const emit = defineEmits(['close', 'submit'])
-
-const form = ref(props.createForm ? props.createForm() : {})
-
-function resetForm() {
-  form.value = props.createForm ? props.createForm() : {}
-}
-
-function handleClose() {
-  emit('close')
-}
-
-function handleSubmit() {
-  emit('submit', { ...form.value })
-  resetForm()
-  handleClose()
-}
-
-const formValid = computed(() => {
-  if (props.validateForm) return props.validateForm(form.value)
-  return true // default: always valid
-})
-
-watch(
-  () => props.show,
-  (val) => {
-    if (val) resetForm()
-  },
-)
 </script>
 
 <style scoped>

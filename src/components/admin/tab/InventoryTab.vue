@@ -31,8 +31,14 @@
       </div>
     </div>
 
-    <AddItemModal :show="showAddItem" @close="showAddItem = false" />
-    <NewTypeModal :show="showNewType" @close="showNewType = false" />
+    <AddItemModal :show="showAddItem" @close="showAddItem = false" @submit="handleAddItemSubmit" />
+    <NewTypeModal :show="showNewType" @close="showNewType = false" @submit="handleNewTypeSubmit" />
+    <EditItemModal
+      :show="showEditItem"
+      :product="selectedProduct"
+      @close="showEditItem = false"
+      @submit="handleEditItemSubmit"
+    />
   </main>
 </template>
 
@@ -40,6 +46,7 @@
 import { ref, watch, onMounted } from 'vue'
 import AddItemModal from '../modals/AddItemModal.vue'
 import NewTypeModal from '../modals/NewTypeModal.vue'
+import EditItemModal from '../modals/EditItemModal.vue'
 import LoadingIndicator from '../../LoadingIndicator.vue'
 import ErrorMessage from '../../ErrorMessage.vue'
 import { apiClient } from '../../../utils/auth.js'
@@ -47,6 +54,8 @@ import ProductComponent from '../ProductComponent.vue'
 
 const showAddItem = ref(false)
 const showNewType = ref(false)
+const showEditItem = ref(false)
+const selectedProduct = ref(null)
 
 const products = ref([])
 const error = ref(null)
@@ -64,11 +73,40 @@ const loadProducts = async () => {
   try {
     const response = await apiClient.get('/Product/by-type')
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Backend error response:', errorText)
       throw new Error(`Error ${response.status}: ${response.statusText}`)
     }
     const data = await response.json()
     products.value = data
-    console.log(data)
+    console.log('Loaded products by type:', data)
+
+    // Debug: Check if products have imageUrl
+    if (data && Array.isArray(data)) {
+      data.forEach((type, typeIndex) => {
+        console.log(`Product Type ${typeIndex + 1}:`, {
+          id: type.id,
+          name: type.name,
+          productCount: type.products?.length || 0,
+          typeKeys: Object.keys(type),
+        })
+
+        if (type.products && Array.isArray(type.products)) {
+          type.products.forEach((product, productIndex) => {
+            console.log(`  Product ${productIndex + 1}:`, {
+              id: product.id,
+              name: product.name,
+              imageUrl: product.imageUrl,
+              hasImageUrl: !!product.imageUrl,
+              price: product.price,
+              stock: product.stock,
+              productKeys: Object.keys(product),
+              fullProduct: product,
+            })
+          })
+        }
+      })
+    }
   } catch (err) {
     error.value = err.message
     console.error('Fetch error:', err)
@@ -85,14 +123,61 @@ const toggleType = (id) => {
   }
 }
 
-const handleEditProduct = (product) => {
+const handleEditProduct = async (product) => {
   console.log('Edit product:', product)
-  // TODO: Implement edit functionality
+  selectedProduct.value = product
+  showEditItem.value = true
 }
 
-const handleDeleteProduct = (product) => {
+const handleDeleteProduct = async (product) => {
   console.log('Delete product:', product)
-  // TODO: Implement delete functionality
+  if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
+    try {
+      const response = await apiClient.delete(`/Product/${product.id}`)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Backend error response:', errorText)
+        throw new Error(`Failed to delete product: ${response.status} ${response.statusText}`)
+      }
+
+      console.log('Product deleted successfully')
+      // Refresh the product list
+      await loadProducts()
+    } catch (err) {
+      console.error('Failed to delete product:', err)
+      alert('Failed to delete product: ' + err.message)
+    }
+  }
+}
+
+const handleAddItemSubmit = async (result) => {
+  if (result.success) {
+    console.log('Product created successfully:', result.data)
+    // Refresh the product list
+    await loadProducts()
+  } else {
+    console.error('Failed to create product:', result.error)
+  }
+}
+
+const handleNewTypeSubmit = async (result) => {
+  if (result.success) {
+    console.log('Product type created successfully:', result.data)
+    // Refresh the product list
+    await loadProducts()
+  } else {
+    console.error('Failed to create product type:', result.error)
+  }
+}
+
+const handleEditItemSubmit = async (result) => {
+  if (result.success) {
+    console.log('Product edited successfully:', result.data)
+    // Refresh the product list
+    await loadProducts()
+  } else {
+    console.error('Failed to edit product:', result.error)
+  }
 }
 
 onMounted(() => {

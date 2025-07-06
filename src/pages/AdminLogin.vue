@@ -27,8 +27,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 
+const router = useRouter()
 const { login, loading, error, clearError } = useAuth()
 
 const username = ref('')
@@ -47,7 +49,7 @@ async function handleLogin() {
     const userData = await login(username.value, password.value, rememberMe.value)
 
     if (userData.isAdmin) {
-      window.location.href = '/admin/dashboard'
+      router.push('/admin/dashboard')
     } else {
       error.value = 'Access denied. Admin privileges required.'
     }

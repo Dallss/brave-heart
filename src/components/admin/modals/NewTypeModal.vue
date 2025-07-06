@@ -84,7 +84,7 @@ function removeAttribute(form, index) {
 async function handleSubmit(data) {
   error.value = ''
   try {
-    // Only send name and attributes (with name, dataType, isRequired)
+    // Transform attributes to match backend DTO structure
     const payload = {
       name: data.name,
       attributes: data.attributes.map((attr) => ({
@@ -94,16 +94,24 @@ async function handleSubmit(data) {
       })),
     }
 
+    console.log('Creating product type with payload:', payload)
+
     const response = await apiClient.post('/ProductType', payload)
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Backend error response:', errorText)
       throw new Error(`Failed to create product type: ${response.status} ${response.statusText}`)
     }
 
-    emit('submit', data)
+    const result = await response.json()
+    console.log('Product type created successfully:', result)
+
+    emit('submit', { success: true, data: result })
     alert('Successfully created new type!')
     emit('close')
   } catch (err) {
+    console.error('Failed to create product type:', err)
     error.value = err.message || 'Failed to create product type.'
   }
 }
