@@ -52,16 +52,16 @@
       />
 
       <div v-if="selectedType && selectedType.attributes && selectedType.attributes.length > 0">
-        <label>Attributes <span class="required-indicator">*</span></label>
+        <label>Attributes</label>
         <div v-for="attr in selectedType.attributes" :key="attr.id" style="margin-bottom: 8px">
           <label class="attribute-label">
-            {{ attr.name }} <span class="required-indicator">*</span>
+            {{ attr.name }} <span v-if="attr.isRequired" class="required-indicator">*</span>
           </label>
           <input
             v-model="form.attributeValues[attr.id]"
             :placeholder="attr.name + ' (' + attr.dataType + ')'"
             :type="attr.dataType === 'int' || attr.dataType === 'decimal' ? 'number' : 'text'"
-            required
+            :required="attr.isRequired"
             class="attribute-input"
           />
         </div>
@@ -110,11 +110,13 @@ const isFormValid = computed(() => {
   // Check if name is provided and not empty
   if (!form.value.name || form.value.name.trim() === '') return false
 
-  // Check required attributes
+  // Check only required attributes
   if (selectedType.value.attributes) {
     for (const attr of selectedType.value.attributes) {
-      const value = form.value.attributeValues[attr.id]
-      if (!value || value.toString().trim() === '') return false
+      if (attr.isRequired) {
+        const value = form.value.attributeValues[attr.id]
+        if (!value || value.toString().trim() === '') return false
+      }
     }
   }
 
@@ -237,12 +239,14 @@ async function handleSubmit() {
     errors.push('Product name is required')
   }
 
-  // Check required attributes
+  // Check only required attributes
   if (selectedType.value.attributes) {
     selectedType.value.attributes.forEach((attr) => {
-      const value = form.value.attributeValues[attr.id]
-      if (!value || value.toString().trim() === '') {
-        errors.push(`${attr.name} is required`)
+      if (attr.isRequired) {
+        const value = form.value.attributeValues[attr.id]
+        if (!value || value.toString().trim() === '') {
+          errors.push(`${attr.name} is required`)
+        }
       }
     })
   }

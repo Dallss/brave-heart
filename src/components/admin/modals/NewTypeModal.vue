@@ -1,96 +1,149 @@
 <template>
-  <BaseModal
-    :show="props.show"
-    title="Create Product Type"
-    :createForm="createForm"
-    :validateForm="validateForm"
-    @close="emit('close')"
-    @submit="handleSubmit"
-  >
-    <template #default="{ form }">
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <label>Name</label>
+  <BaseModal :show="props.show" title="Create Product Type" @close="emit('close')">
+    <div v-if="error">
+      <span style="color: red">{{ error }}</span>
+    </div>
+    <div v-else>
+      <label>Name <span class="required-indicator">*</span></label>
       <input v-model="form.name" type="text" required placeholder="Type name" />
 
       <div>
-        <label>Attributes</label>
-        <div v-for="(attr, index) in form.attributes" :key="index" style="margin-bottom: 8px">
-          <input v-model="attr.name" type="text" placeholder="Attribute Name" required />
-          <select v-model="attr.dataType" required style="margin-bottom: 0; margin-top: 0">
-            <option disabled value="">Select Data Type</option>
-            <option value="string">Text</option>
-            <option value="int">Number</option>
-            <option value="decimal">Decimal</option>
-            <option value="DateTime">Date</option>
-            <option value="bool">True/False</option>
-          </select>
-          <label style="margin-left: 8px; font-size: 0.95em">
-            <input type="checkbox" v-model="attr.isRequired" /> Required
-          </label>
-          <button
-            type="button"
-            @click="() => removeAttribute(form, index)"
-            style="
-              margin-left: 8px;
-              background: #eee;
-              color: #a36a6a;
-              border: none;
-              border-radius: 4px;
-              padding: 2px 8px;
-              cursor: pointer;
-            "
-          >
-            Remove
-          </button>
+        <label>Attributes <span class="required-indicator">*</span></label>
+        <div v-for="(attr, index) in form.attributes" :key="index" class="attribute-row">
+          <div class="attribute-inputs">
+            <input
+              v-model="attr.name"
+              type="text"
+              placeholder="Attribute Name"
+              required
+              class="attribute-name-input"
+            />
+            <select v-model="attr.dataType" required class="attribute-type-select">
+              <option disabled value="">Select Data Type</option>
+              <option value="string">Text</option>
+              <option value="int">Number</option>
+              <option value="decimal">Decimal</option>
+              <option value="DateTime">Date</option>
+              <option value="bool">True/False</option>
+            </select>
+          </div>
+          <div class="attribute-options">
+            <label class="required-checkbox">
+              <input type="checkbox" v-model="attr.isRequired" />
+              Required
+            </label>
+            <button type="button" @click="() => removeAttribute(index)" class="remove-btn">
+              Remove
+            </button>
+          </div>
         </div>
-        <button type="button" @click="() => addAttribute(form)">+ Add Attribute</button>
+        <button type="button" @click="addAttribute" class="add-attribute-btn">
+          + Add Attribute
+        </button>
       </div>
-    </template>
+
+      <div class="modal-actions">
+        <button type="button" @click="emit('close')">Cancel</button>
+        <button
+          type="button"
+          @click="handleSubmit"
+          :disabled="!isFormValid"
+          :class="{ disabled: !isFormValid }"
+        >
+          Create Product Type
+        </button>
+      </div>
+    </div>
   </BaseModal>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import BaseModal from './BaseModal.vue'
+import { ref, computed } from 'vue'
 import { apiClient } from '../../../utils/auth.js'
 
 const props = defineProps({ show: Boolean })
 const emit = defineEmits(['close', 'submit'])
+
 const error = ref('')
 
-function createForm() {
-  return {
+const form = ref({
+  name: '',
+  attributes: [],
+})
+
+const isFormValid = computed(() => {
+  // Check if name is provided and not empty
+  if (!form.value.name || form.value.name.trim() === '') return false
+
+  // Check if at least one attribute is added
+  if (form.value.attributes.length === 0) return false
+
+  // Check if all attributes have name and dataType
+  return form.value.attributes.every(
+    (attr) => attr.name && attr.name.trim() !== '' && attr.dataType && attr.dataType !== '',
+  )
+})
+
+function resetForm() {
+  form.value = {
     name: '',
     attributes: [],
   }
+  error.value = ''
 }
 
-function validateForm(form) {
-  if (!form.name) return false
-  return form.attributes.length > 0 && form.attributes.every((attr) => attr.name && attr.dataType)
-}
-
-function addAttribute(form) {
-  form.attributes.push({
+function addAttribute() {
+  form.value.attributes.push({
     name: '',
     dataType: '',
     isRequired: false,
   })
 }
 
-function removeAttribute(form, index) {
-  form.attributes.splice(index, 1)
+function removeAttribute(index) {
+  form.value.attributes.splice(index, 1)
 }
 
-async function handleSubmit(data) {
+async function handleSubmit() {
+  // Validate required fields
+  const errors = []
+
+  // Check if name is provided and not empty
+  if (!form.value.name || form.value.name.trim() === '') {
+    errors.push('Product type name is required')
+  }
+
+  // Check if at least one attribute is added
+  if (form.value.attributes.length === 0) {
+    errors.push('At least one attribute is required')
+  }
+
+  // Check if all attributes have name and dataType
+  form.value.attributes.forEach((attr, index) => {
+    if (!attr.name || attr.name.trim() === '') {
+      errors.push(`Attribute ${index + 1} name is required`)
+    }
+    if (!attr.dataType || attr.dataType === '') {
+      errors.push(`Attribute ${index + 1} data type is required`)
+    }
+  })
+
+  // If there are validation errors, show them and stop submission
+  if (errors.length > 0) {
+    alert('Please fix the following errors:\n\n' + errors.join('\n'))
+    return
+  }
+
   error.value = ''
   try {
     // Transform attributes to match backend DTO structure
     const payload = {
-      name: data.name,
-      attributes: data.attributes.map((attr) => ({
-        name: attr.name,
-        dataType: attr.dataType,
-        isRequired: !!attr.isRequired,
+      Name: form.value.name.trim(),
+      Attributes: form.value.attributes.map((attr) => ({
+        Name: attr.name.trim(),
+        DataType: attr.dataType,
+        IsRequired: !!attr.isRequired,
       })),
     }
 
@@ -108,53 +161,27 @@ async function handleSubmit(data) {
     console.log('Product type created successfully:', result)
 
     emit('submit', { success: true, data: result })
-    alert('Successfully created new type!')
+    resetForm()
     emit('close')
   } catch (err) {
     console.error('Failed to create product type:', err)
     error.value = err.message || 'Failed to create product type.'
   }
 }
+
+// Reset form when modal opens
+import { watch } from 'vue'
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      resetForm()
+    }
+  },
+)
 </script>
 
 <style scoped>
-.error-message {
-  color: #b00;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-  text-align: center;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #fff;
-  padding: 32px 32px 24px 32px;
-  border-radius: 12px;
-  width: 420px;
-  box-shadow: 0 4px 24px rgba(90, 24, 24, 0.12);
-  color: #5a1818;
-  font-family: inherit;
-}
-
-.modal h2 {
-  color: #5a1818;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-  letter-spacing: 1px;
-}
-
 .modal label {
   color: #7a2a2a;
   font-weight: 600;
@@ -201,6 +228,87 @@ async function handleSubmit(data) {
   background: #fff;
 }
 
+.required-indicator {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.attribute-row {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f9f9f9;
+}
+
+.attribute-inputs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.attribute-name-input {
+  flex: 2;
+  margin-bottom: 0;
+}
+
+.attribute-type-select {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.attribute-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.required-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.required-checkbox input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}
+
+.remove-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.remove-btn:hover {
+  background: #c82333;
+}
+
+.add-attribute-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 18px;
+  width: 100%;
+}
+
+.add-attribute-btn:hover {
+  background: #218838;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -208,8 +316,7 @@ async function handleSubmit(data) {
   margin-top: 18px;
 }
 
-.modal-actions button,
-.modal button[type='button'] {
+.modal-actions button {
   background: #5a1818;
   color: #fff;
   border: none;
@@ -220,21 +327,20 @@ async function handleSubmit(data) {
   transition: background 0.2s;
 }
 
-.modal-actions button:hover,
-.modal button[type='button']:hover {
+.modal-actions button:hover:not(:disabled) {
   background: #a36a6a;
 }
 
-.modal button[type='button'] {
-  margin-top: 0.3rem;
-  margin-bottom: 0.7rem;
-  background: #a36a6a;
-  color: #fff;
-  padding: 6px 14px;
-  font-size: 0.95rem;
+.modal-actions button:disabled,
+.modal-actions button.disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.modal button[type='button']:hover {
-  background: #5a1818;
+.modal-actions button:disabled:hover,
+.modal-actions button.disabled:hover {
+  background: #ccc;
 }
 </style>

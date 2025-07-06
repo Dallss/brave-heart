@@ -4,7 +4,8 @@
       <h2>Inventory</h2>
       <div class="dashboard-header-right">
         <button @click="showAddItem = true" class="add-button">Add Item</button> |
-        <button @click="showNewType = true" class="add-button">New Type</button>
+        <button @click="showNewType = true" class="add-button">New Type</button> |
+        <button @click="showDeleteType = true" class="add-button">Delete Type</button>
       </div>
     </div>
 
@@ -33,6 +34,11 @@
 
     <AddItemModal :show="showAddItem" @close="showAddItem = false" @submit="handleAddItemSubmit" />
     <NewTypeModal :show="showNewType" @close="showNewType = false" @submit="handleNewTypeSubmit" />
+    <DeleteTypeModal
+      :show="showDeleteType"
+      @close="showDeleteType = false"
+      @submit="handleDeleteTypeSubmit"
+    />
     <EditItemModal
       :show="showEditItem"
       :product="selectedProduct"
@@ -46,6 +52,7 @@
 import { ref, watch, onMounted } from 'vue'
 import AddItemModal from '../modals/AddItemModal.vue'
 import NewTypeModal from '../modals/NewTypeModal.vue'
+import DeleteTypeModal from '../modals/DeleteTypeModal.vue'
 import EditItemModal from '../modals/EditItemModal.vue'
 import LoadingIndicator from '../../LoadingIndicator.vue'
 import ErrorMessage from '../../ErrorMessage.vue'
@@ -54,6 +61,7 @@ import ProductComponent from '../ProductComponent.vue'
 
 const showAddItem = ref(false)
 const showNewType = ref(false)
+const showDeleteType = ref(false)
 const showEditItem = ref(false)
 const selectedProduct = ref(null)
 
@@ -177,6 +185,16 @@ const handleEditItemSubmit = async (result) => {
     await loadProducts()
   } else {
     console.error('Failed to edit product:', result.error)
+  }
+}
+
+const handleDeleteTypeSubmit = async (result) => {
+  if (result.success) {
+    console.log('Product type deleted successfully:', result.data)
+    // Refresh the product list
+    await loadProducts()
+  } else {
+    console.error('Failed to delete product type:', result.error)
   }
 }
 

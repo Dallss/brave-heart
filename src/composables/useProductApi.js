@@ -50,6 +50,13 @@ export function useProductApi() {
     return await response.json()
   }
 
+  // Delete a product type
+  const deleteProductType = async (id) => {
+    const response = await apiClient.delete(`/ProductType/${id}`)
+    if (!response.ok) throw new Error(await response.text())
+    return true
+  }
+
   return {
     getProductById,
     getProductAttributes,
@@ -58,5 +65,6 @@ export function useProductApi() {
     deleteProduct,
     getProductsByType,
     getProductTypes,
+    deleteProductType,
   }
 }
