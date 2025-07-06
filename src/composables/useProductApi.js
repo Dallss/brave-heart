@@ -43,6 +43,13 @@ export function useProductApi() {
     return await response.json()
   }
 
+  // Get all product types
+  const getProductTypes = async () => {
+    const response = await apiClient.get('/ProductType')
+    if (!response.ok) throw new Error(await response.text())
+    return await response.json()
+  }
+
   return {
     getProductById,
     getProductAttributes,
@@ -50,5 +57,6 @@ export function useProductApi() {
     createProduct,
     deleteProduct,
     getProductsByType,
+    getProductTypes,
   }
 }

@@ -1,23 +1,6 @@
 <template>
   <BaseModal :show="show" @close="$emit('close')" title="Edit Product">
     <form @submit.prevent="handleSubmit" class="edit-form">
-      <!-- Product Type (Read-only) -->
-      <div class="form-group">
-        <label for="productType">Product Type:</label>
-        <select id="productType" v-model="formData.productTypeId" disabled class="form-control">
-          <option value="">Select a product type</option>
-          <option
-            v-for="type in productTypes"
-            :key="type.id"
-            :value="type.id"
-            :selected="type.id === formData.productTypeId"
-          >
-            {{ type.name }}
-          </option>
-        </select>
-        <small class="form-text">Product type cannot be changed</small>
-      </div>
-
       <!-- Product Name -->
       <div class="form-group">
         <label for="productName">Product Name:</label>
@@ -62,22 +45,34 @@
 
       <!-- Product Image -->
       <div class="form-group">
-        <label for="productImage">Product Image:</label>
-        <div class="image-upload-container">
-          <div v-if="currentImageUrl" class="current-image">
-            <img :src="currentImageUrl" alt="Current product image" class="preview-image" />
-            <p class="current-image-text">Current image</p>
-          </div>
-          <input
-            id="productImage"
-            ref="imageInput"
-            type="file"
-            accept="image/*"
-            @change="handleImageChange"
-            class="form-control"
-          />
-          <small class="form-text">Leave empty to keep current image</small>
+        <label>Product Image</label>
+        <div v-if="currentImageUrl" class="current-image">
+          <img :src="currentImageUrl" alt="Current product image" class="preview-image" />
+          <p class="current-image-text">Current image</p>
         </div>
+        <div class="drop-area" @dragover.prevent @drop.prevent="handleDrop($event)">
+          <div v-if="uploading" class="uploading">
+            <span>Uploading image...</span>
+          </div>
+          <div v-else-if="newImageFile" class="selected-file">
+            <span>{{ newImageFile.name }}</span>
+            <div v-if="newImageUrl" class="upload-success">✓ Uploaded successfully</div>
+            <div v-else class="image-selected">✓ Image selected (will upload on submit)</div>
+          </div>
+          <div v-else class="placeholder">
+            <span>Drag and drop an image here</span>
+          </div>
+        </div>
+
+        <button type="button" class="add-photo-btn" @click="fileInput?.click()">Add Photo</button>
+
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          class="hidden-input"
+          @change="onImageChange"
+        />
       </div>
 
       <!-- Product Attributes -->
@@ -126,8 +121,11 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit'])
 
 const submitting = ref(false)
-const imageInput = ref(null)
+const fileInput = ref(null)
 const productTypes = ref([])
+const uploading = ref(false)
+const newImageFile = ref(null)
+const newImageUrl = ref('')
 
 const formData = ref({
   name: '',
@@ -235,15 +233,41 @@ const resetForm = () => {
   }
   attributeValues.value = {}
   currentImageUrl.value = ''
-  if (imageInput.value) {
-    imageInput.value.value = ''
+  newImageFile.value = null
+  newImageUrl.value = ''
+  if (fileInput.value) {
+    fileInput.value.value = ''
   }
 }
 
-const handleImageChange = (event) => {
-  const file = event.target.files[0]
+async function onImageChange(e) {
+  const file = e.target.files[0]
+
+  if (!file) {
+    newImageFile.value = null
+    newImageUrl.value = ''
+    return
+  }
+
+  // Allow only image files
+  if (!file.type.startsWith('image/')) {
+    alert('Please select a valid image file.')
+    e.target.value = ''
+    return
+  }
+
+  newImageFile.value = file
+  newImageUrl.value = '' // Clear any previous URL since we haven't uploaded yet
+
+  // Reset input so user can re-select the same file if needed
+  e.target.value = ''
+}
+
+function handleDrop(e) {
+  const file = e.dataTransfer.files[0]
   if (file) {
-    console.log('New image selected:', file.name)
+    const fakeEvent = { target: { files: [file], value: '' } }
+    onImageChange(fakeEvent)
   }
 }
 
@@ -255,8 +279,8 @@ const handleSubmit = async () => {
     let imageUrlToSend = currentImageUrl.value
 
     // ... image upload logic (if needed) ...
-    if (imageInput.value && imageInput.value.files[0]) {
-      const imageFile = imageInput.value.files[0]
+    if (newImageFile.value) {
+      const imageFile = newImageFile.value
       const folder = 'brave-heart-images/product-images'
       // Request signature with folder param
       const signatureResponse = await apiClient.get(
@@ -475,5 +499,71 @@ const handleSubmit = async () => {
 
 .btn-secondary:hover:not(:disabled) {
   background: #5a6268;
+}
+
+.drop-area {
+  border: 2px dashed #a36a6a;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  background-color: #fff8f8;
+  margin-bottom: 18px;
+  transition: background-color 0.2s;
+}
+
+.drop-area:hover {
+  background-color: #f3eaea;
+}
+
+.placeholder {
+  color: #a36a6a;
+  font-size: 0.95rem;
+}
+
+.selected-file {
+  color: #5a1818;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.uploading {
+  color: #a36a6a;
+  font-size: 0.95rem;
+}
+
+.upload-success {
+  color: #28a745;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.image-selected {
+  color: #28a745;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.add-photo-btn {
+  background: #a36a6a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 18px;
+  width: 100%;
+}
+
+.add-photo-btn:hover {
+  background: #5a1818;
 }
 </style>

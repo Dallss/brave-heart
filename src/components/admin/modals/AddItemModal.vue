@@ -1,301 +1,203 @@
 <template>
-  <BaseModal
-    :show="props.show"
-    title="Create Product"
-    :createForm="createForm"
-    :validateForm="validateForm"
-    @close="emit('close')"
-    @submit="handleSubmit"
-  >
-    <template #default="{ form }">
-      <div v-if="Array.isArray(productTypes) && productTypes.length === 0">
-        <h1>No product types yet</h1>
+  <BaseModal :show="props.show" title="Create Product" @close="emit('close')">
+    <div v-if="loading">
+      <span>Loading product types...</span>
+    </div>
+    <div v-else-if="error">
+      <span style="color: red">{{ error }}</span>
+    </div>
+    <div v-else-if="productTypes.length === 0">
+      <span style="color: red">No product types available.</span>
+    </div>
+    <div v-else>
+      <label>Product Type</label>
+      <select v-model="selectedTypeId" required>
+        <option v-for="type in productTypes" :key="type.id" :value="type.id">
+          {{ type.name }}
+        </option>
+      </select>
+
+      <label>Name</label>
+      <input v-model="form.name" type="string" required />
+
+      <label>Price</label>
+      <input v-model="form.price" type="number" required />
+
+      <label>Stock</label>
+      <input v-model="form.stock" type="number" required />
+
+      <label>Product Image</label>
+      <div class="drop-area" @dragover.prevent @drop.prevent="handleDrop($event)">
+        <div v-if="uploading" class="uploading">
+          <span>Uploading image...</span>
+        </div>
+        <div v-else-if="form.imageFile" class="selected-file">
+          <span>{{ form.imageFile.name }}</span>
+          <div v-if="form.imageUrl" class="upload-success">✓ Uploaded successfully</div>
+          <div v-else class="image-selected">✓ Image selected (will upload on submit)</div>
+        </div>
+        <div v-else class="placeholder">
+          <span>Drag and drop an image here</span>
+        </div>
       </div>
-      <div v-else-if="form">
-        <label>Product Type</label>
-        <select v-model="form.productTypeId" required @change="onTypeChange(form)">
-          <option v-for="type in productTypes" :key="type.id" :value="type.id">
-            {{ type.name }}
-          </option>
-        </select>
 
-        <label>Name</label>
-        <input v-model="form.name" type="string" required />
+      <button type="button" class="add-photo-btn" @click="fileInput?.click()">Add Photo</button>
 
-        <label>Price</label>
-        <input v-model="form.price" type="number" required />
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        class="hidden-input"
+        @change="onImageChange"
+      />
 
-        <label>Stock</label>
-        <input v-model="form.stock" type="number" required />
-
-        <label>Product Image</label>
-        <div
-          class="drop-area"
-          @dragover.prevent
-          @drop.prevent="handleDrop($event, form)"
-          @click="fileInput?.click()"
-        >
-          <div v-if="uploading" class="uploading">
-            <span>Uploading image...</span>
-          </div>
-          <div v-else-if="form.imageFile" class="selected-file">
-            <span>{{ form.imageFile.name }}</span>
-            <div v-if="form.imageUrl" class="upload-success">✓ Uploaded successfully</div>
-            <div v-else class="image-selected">✓ Image selected (will upload on submit)</div>
-          </div>
-          <div v-else class="placeholder">
-            <span>Drag and drop or click to choose an image</span>
-          </div>
+      <div v-if="selectedType && selectedType.attributes && selectedType.attributes.length > 0">
+        <label>Attributes <span class="required-indicator">*</span></label>
+        <div v-for="attr in selectedType.attributes" :key="attr.id" style="margin-bottom: 8px">
+          <label class="attribute-label">
+            {{ attr.name }} <span class="required-indicator">*</span>
+          </label>
           <input
-            ref="fileInput"
-            type="file"
-            accept="image/*"
-            class="hidden-input"
-            @change="(e) => onImageChange(e, form)"
+            v-model="form.attributeValues[attr.id]"
+            :placeholder="attr.name + ' (' + attr.dataType + ')'"
+            :type="attr.dataType === 'int' || attr.dataType === 'decimal' ? 'number' : 'text'"
+            required
+            class="attribute-input"
           />
         </div>
-
-        <div v-if="selectedType">
-          <label>Attributes</label>
-          <div v-for="attr in selectedType.attributes" :key="attr.id" style="margin-bottom: 8px">
-            <input
-              v-model="form.attributeValues[attr.id]"
-              :placeholder="attr.name + ' (' + attr.dataType + ')'"
-              :type="attr.dataType === 'int' || attr.dataType === 'decimal' ? 'number' : 'text'"
-              required
-            />
-          </div>
-          <!-- Debug info -->
-          <div style="font-size: 0.8rem; color: #666; margin-top: 8px">
-            Debug: Selected type: {{ selectedType.name }} (ID: {{ selectedType.id }})
-            <br />Attributes: {{ selectedType.attributes.map((a) => a.name).join(', ') }}
-          </div>
-        </div>
       </div>
-    </template>
+
+      <div class="modal-actions">
+        <button type="button" @click="emit('close')">Cancel</button>
+        <button
+          type="button"
+          @click="handleSubmit"
+          :disabled="!isFormValid"
+          :class="{ disabled: !isFormValid }"
+        >
+          Create Product
+        </button>
+      </div>
+    </div>
   </BaseModal>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { apiClient } from '../../../utils/auth.js'
+import BaseModal from './BaseModal.vue'
+import { ref, watch, onMounted, computed } from 'vue'
+import { useProductApi } from '../../../composables/useProductApi.js'
 
-const fileInput = ref(null) // Reference to hidden file input
+const fileInput = ref(null)
 const props = defineProps({ show: Boolean })
 const emit = defineEmits(['close', 'submit'])
+
+const { getProductTypes, createProduct } = useProductApi()
 
 const productTypes = ref([])
 const loading = ref(false)
 const error = ref(null)
 const uploading = ref(false)
+const selectedTypeId = ref('')
+
+const selectedType = computed(() => {
+  return productTypes.value.find((type) => type.id === selectedTypeId.value) || null
+})
+
+const isFormValid = computed(() => {
+  // Check if product type is selected
+  if (!selectedType.value) return false
+
+  // Check if name is provided and not empty
+  if (!form.value.name || form.value.name.trim() === '') return false
+
+  // Check required attributes
+  if (selectedType.value.attributes) {
+    for (const attr of selectedType.value.attributes) {
+      const value = form.value.attributeValues[attr.id]
+      if (!value || value.toString().trim() === '') return false
+    }
+  }
+
+  return true
+})
+
+const form = ref({
+  name: '',
+  price: 0,
+  stock: 0,
+  productTypeId: '',
+  imageFile: null,
+  imageUrl: '',
+  attributeValues: {},
+})
+
+function resetForm() {
+  form.value = {
+    name: '',
+    price: 0,
+    stock: 0,
+    productTypeId: selectedTypeId.value,
+    imageFile: null,
+    imageUrl: '',
+    attributeValues: {},
+  }
+
+  // Initialize attribute values for the selected type
+  if (selectedType.value && selectedType.value.attributes) {
+    selectedType.value.attributes.forEach((attr) => {
+      form.value.attributeValues[attr.id] = ''
+    })
+  }
+}
 
 async function fetchProductTypes() {
   loading.value = true
+  error.value = null
+
   try {
-    const response = await apiClient.get('/ProductType')
-    if (!response.ok) throw new Error('Failed to fetch product types')
+    const types = await getProductTypes()
+    productTypes.value = types
 
-    const data = await response.json()
-    productTypes.value = data
-    console.log('fetchProductTypes - loaded product types:', data)
-
-    // Log each product type and its attributes in detail
-    data.forEach((type, index) => {
-      console.log(`fetchProductTypes - Product Type ${index + 1}:`, {
-        id: type.id,
-        name: type.name,
-        attributes: type.attributes,
-        attributeCount: type.attributes?.length || 0,
-      })
-
-      // Log each attribute in detail
-      if (type.attributes && type.attributes.length > 0) {
-        type.attributes.forEach((attr, attrIndex) => {
-          console.log(`fetchProductTypes - Product Type ${type.name} Attribute ${attrIndex + 1}:`, {
-            id: attr.id,
-            name: attr.name,
-            dataType: attr.dataType,
-            isRequired: attr.isRequired,
-          })
-        })
-      }
-    })
-
-    // Set selectedType to the first product type if modal is open
-    if (props.show && data.length > 0) {
-      console.log('fetchProductTypes - setting selectedType to first type:', data[0])
-      selectedType.value = data[0]
+    // Set the first type as selected if available
+    if (types.length > 0) {
+      selectedTypeId.value = types[0].id
+      resetForm()
     }
   } catch (err) {
-    error.value = err.message || 'Unexpected error'
+    error.value = err.message || 'Failed to fetch product types'
   } finally {
     loading.value = false
   }
 }
+
 onMounted(() => {
-  if (props.show) fetchProductTypes()
+  if (props.show) {
+    fetchProductTypes()
+  }
 })
+
 watch(
   () => props.show,
   (val) => {
-    if (val) fetchProductTypes()
+    if (val) {
+      fetchProductTypes()
+    }
   },
 )
-const selectedType = ref(null)
 
-function createForm() {
-  // Always default to the first product type
-  const firstType =
-    Array.isArray(productTypes.value) && productTypes.value.length > 0
-      ? productTypes.value[0]
-      : null
-  console.log('createForm - firstType:', firstType)
-  console.log('createForm - firstType attributes:', firstType?.attributes)
-  selectedType.value = firstType
-  const attributeValues = firstType
-    ? firstType.attributes.reduce((acc, attr) => {
-        acc[attr.id] = ''
-        return acc
-      }, {})
-    : {}
-  console.log('createForm - attributeValues:', attributeValues)
-  return {
-    name: '',
-    price: 0,
-    stock: 0,
-    productTypeId: firstType ? firstType.id : '',
-    imageUrl: '',
-    imageFile: null,
-    attributeValues: attributeValues,
+watch(selectedTypeId, (newId) => {
+  if (newId) {
+    form.value.productTypeId = newId
+    resetForm()
   }
-}
+})
 
-function validateForm(form) {
-  if (!form.productTypeId || !form.price || !form.stock || !form.imageFile || form.name == '')
-    return false
-  if (!selectedType.value) return false
-  return selectedType.value.attributes.every(
-    (attr) => form.attributeValues[attr.id] && form.attributeValues[attr.id] !== '',
-  )
-}
-
-function onTypeChange(form) {
-  const type = productTypes.value.find((t) => t.id === form.productTypeId)
-  console.log('onTypeChange - found type:', type)
-  console.log('onTypeChange - productTypes:', productTypes.value)
-  console.log('onTypeChange - form.productTypeId:', form.productTypeId)
-  console.log('onTypeChange - type attributes:', type?.attributes)
-
-  // Log each attribute in detail
-  if (type?.attributes && type.attributes.length > 0) {
-    type.attributes.forEach((attr, attrIndex) => {
-      console.log(`onTypeChange - Attribute ${attrIndex + 1}:`, {
-        id: attr.id,
-        name: attr.name,
-        dataType: attr.dataType,
-        isRequired: attr.isRequired,
-      })
-    })
-  }
-
-  selectedType.value = type
-  // Reset attribute values to match the selected type
-  form.attributeValues = type
-    ? type.attributes.reduce((acc, attr) => {
-        acc[attr.id] = ''
-        return acc
-      }, {})
-    : {}
-  console.log('onTypeChange - new attributeValues:', form.attributeValues)
-}
-
-async function uploadToCloudinary(file) {
-  try {
-    // Step 1: Get signature from backend
-    const timestamp = Math.round(new Date().getTime() / 1000)
-
-    console.log('Requesting signature with timestamp:', timestamp)
-
-    const signatureResponse = await apiClient.get(`/Cloudinary/signature?timestamp=${timestamp}`)
-
-    if (!signatureResponse.ok) {
-      throw new Error('Failed to get upload signature')
-    }
-
-    const signatureData = await signatureResponse.json()
-    console.log('Received signature data:', signatureData)
-
-    // Validate signature data
-    if (
-      !signatureData.apiKey ||
-      !signatureData.timestamp ||
-      !signatureData.signature ||
-      !signatureData.cloudName
-    ) {
-      console.error('Missing required signature data:', {
-        hasApiKey: !!signatureData.apiKey,
-        hasTimestamp: !!signatureData.timestamp,
-        hasSignature: !!signatureData.signature,
-        hasCloudName: !!signatureData.cloudName,
-      })
-      throw new Error('Invalid signature data received from backend')
-    }
-
-    // Step 2: Create FormData for Cloudinary upload
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('api_key', signatureData.apiKey)
-    formData.append('timestamp', signatureData.timestamp)
-    formData.append('signature', signatureData.signature)
-    // Note: Not adding folder since backend doesn't return it
-
-    // Log what we're sending to Cloudinary
-    console.log('Uploading to Cloudinary with:', {
-      apiKey: signatureData.apiKey,
-      timestamp: signatureData.timestamp,
-      signature: signatureData.signature,
-      cloudName: signatureData.cloudName,
-      fileName: file.name,
-      fileSize: file.size,
-    })
-
-    // Log the actual FormData entries for debugging
-    console.log('FormData entries:')
-    for (const [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`)
-    }
-
-    // Step 3: Upload to Cloudinary
-    const cloudinaryResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      },
-    )
-
-    if (!cloudinaryResponse.ok) {
-      const errorText = await cloudinaryResponse.text()
-      console.error('Cloudinary upload failed:', errorText)
-      throw new Error(`Cloudinary upload failed: ${cloudinaryResponse.status}`)
-    }
-
-    const cloudinaryData = await cloudinaryResponse.json()
-    console.log('Cloudinary upload successful:', cloudinaryData)
-
-    return cloudinaryData.secure_url
-  } catch (error) {
-    console.error('Upload to Cloudinary failed:', error)
-    throw error
-  }
-}
-
-async function onImageChange(e, form) {
+async function onImageChange(e) {
   const file = e.target.files[0]
 
   if (!file) {
-    form.imageFile = null
-    form.imageUrl = ''
+    form.value.imageFile = null
+    form.value.imageUrl = ''
     return
   }
 
@@ -306,132 +208,72 @@ async function onImageChange(e, form) {
     return
   }
 
-  form.imageFile = file
-  form.imageUrl = '' // Clear any previous URL since we haven't uploaded yet
+  form.value.imageFile = file
+  form.value.imageUrl = '' // Clear any previous URL since we haven't uploaded yet
 
   // Reset input so user can re-select the same file if needed
   e.target.value = ''
 }
 
-function handleDrop(e, form) {
+function handleDrop(e) {
   const file = e.dataTransfer.files[0]
   if (file) {
     const fakeEvent = { target: { files: [file], value: '' } }
-    onImageChange(fakeEvent, form)
+    onImageChange(fakeEvent)
   }
 }
 
-async function handleSubmit(data) {
-  console.log('=== handleSubmit START ===')
-  console.log('handleSubmit - data:', data)
-  console.log('handleSubmit - selectedType.value:', selectedType.value)
-  console.log('handleSubmit - selectedType.value?.name:', selectedType.value?.name)
-  console.log('handleSubmit - selectedType.value?.id:', selectedType.value?.id)
-  console.log('handleSubmit - data.productTypeId:', data.productTypeId)
-  console.log('handleSubmit - data.attributeValues:', data.attributeValues)
-
-  uploading.value = true
-
-  // Upload image if selected
-  if (data.imageFile) {
-    try {
-      data.imageUrl = await uploadToCloudinary(data.imageFile)
-      console.log('Image uploaded successfully:', data.imageUrl)
-    } catch (err) {
-      console.error('Image upload failed:', err)
-      alert(
-        'Warning: Image upload failed, but the product will still be created. Error: ' +
-          err.message,
-      )
-      data.imageUrl = '' // Set empty URL if upload fails
-    } finally {
-      uploading.value = false
-    }
+async function handleSubmit() {
+  if (!selectedType.value) {
+    alert('Please select a product type')
+    return
   }
 
-  // Submit to backend
-  try {
-    // Validate that selectedType and attributes exist
-    if (
-      !selectedType.value ||
-      !selectedType.value.attributes ||
-      !Array.isArray(selectedType.value.attributes)
-    ) {
-      throw new Error('Product type or attributes not properly loaded. Please try again.')
-    }
+  // Validate required fields
+  const errors = []
 
-    // Transform attributeValues to match backend DTO structure
-    console.log('handleSubmit - selectedType.value.attributes:', selectedType.value.attributes)
-    console.log(
-      'handleSubmit - selectedType.value.attributes.length:',
-      selectedType.value.attributes.length,
-    )
+  // Check if name is provided and not empty
+  if (!form.value.name || form.value.name.trim() === '') {
+    errors.push('Product name is required')
+  }
 
-    // Safety check: Get the correct product type based on the form's productTypeId
-    const correctProductType = productTypes.value.find((t) => t.id === data.productTypeId)
-    console.log('handleSubmit - correctProductType:', correctProductType)
-    console.log('handleSubmit - correctProductType.attributes:', correctProductType?.attributes)
-
-    const attributesToProcess = correctProductType?.attributes || selectedType.value.attributes
-
-    const attributeValues = attributesToProcess.map((attribute) => {
-      const value = data.attributeValues[attribute.id]
-      console.log(
-        `Processing attribute: ${attribute.name} (ID: ${attribute.id}), value: "${value}"`,
-      )
-      if (!attribute || !attribute.id) {
-        throw new Error(`Attribute is missing or invalid. Please try again.`)
-      }
-      if (!value || value === '') {
-        throw new Error(`Value for attribute "${attribute.name}" is required.`)
-      }
-      return {
-        ProductAttributeId: attribute.id,
-        Value: value,
+  // Check required attributes
+  if (selectedType.value.attributes) {
+    selectedType.value.attributes.forEach((attr) => {
+      const value = form.value.attributeValues[attr.id]
+      if (!value || value.toString().trim() === '') {
+        errors.push(`${attr.name} is required`)
       }
     })
+  }
 
-    console.log('handleSubmit - selectedType:', selectedType.value)
-    console.log('handleSubmit - selectedType attributes:', selectedType.value.attributes)
-    console.log('handleSubmit - data.attributeValues:', data.attributeValues)
-    console.log('handleSubmit - transformed attributeValues:', attributeValues)
+  // If there are validation errors, show them and stop submission
+  if (errors.length > 0) {
+    alert('Please fix the following errors:\n\n' + errors.join('\n'))
+    return
+  }
 
-    const requestPayload = {
-      name: data.name,
-      productTypeId: data.productTypeId,
-      price: data.price,
-      stock: data.stock,
-      imageUrl: data.imageUrl,
-      attributeValues: attributeValues,
+  try {
+    // Prepare the product data with correct API structure
+    const productData = {
+      Name: form.value.name.trim(),
+      Price: parseFloat(form.value.price) || 0,
+      Stock: parseInt(form.value.stock) || 0,
+      ProductTypeId: selectedType.value.id,
+      AttributeValues: Object.entries(form.value.attributeValues).map(([attrId, value]) => ({
+        ProductAttributeId: parseInt(attrId),
+        Value: value.toString(),
+      })),
     }
 
-    console.log('handleSubmit - full request payload:', requestPayload)
-    console.log('handleSubmit - productTypeId being sent:', data.productTypeId)
-    console.log(
-      'handleSubmit - attributeValues being sent:',
-      JSON.stringify(attributeValues, null, 2),
-    )
+    // TODO: Handle image upload if needed
+    // For now, we'll just create the product without image
 
-    const response = await apiClient.post('/Product', requestPayload)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Backend error response:', errorText)
-      throw new Error(`Failed to create product: ${response.status} ${response.statusText}`)
-    }
-
-    const result = await response.json()
-    console.log('Product created successfully:', result)
-
-    // Emit success event to parent component
-    emit('submit', { success: true, data: result })
-
-    // Close the modal
+    const createdProduct = await createProduct(productData)
+    emit('submit', createdProduct)
     emit('close')
   } catch (err) {
-    console.error('Failed to create product:', err)
-    alert('Failed to create product: ' + err.message)
-    emit('submit', { success: false, error: err.message })
+    alert('Failed to create product: ' + (err.message || 'Unknown error'))
   }
 }
 </script>
@@ -577,5 +419,52 @@ async function handleSubmit(data) {
   font-size: 0.85rem;
   margin-top: 4px;
   font-weight: 500;
+}
+
+.add-photo-btn {
+  background: #a36a6a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 18px;
+  width: 100%;
+}
+
+.add-photo-btn:hover {
+  background: #5a1818;
+}
+
+.modal-actions button:disabled,
+.modal-actions button.disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.modal-actions button:disabled:hover,
+.modal-actions button.disabled:hover {
+  background: #ccc;
+}
+
+.required-indicator {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.attribute-label {
+  color: #7a2a2a;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  display: block;
+  font-size: 0.9rem;
+}
+
+.attribute-input {
+  margin-bottom: 12px;
 }
 </style>
