@@ -1,3 +1,19 @@
+// BaseService provides shared env var logging
+class BaseService {
+  static envLogged = false
+  constructor() {
+    this.baseURL = import.meta.env.VITE_BACKEND_BASE_URL
+    if (!BaseService.envLogged) {
+      this.logEnvVars()
+      BaseService.envLogged = true
+    }
+  }
+  logEnvVars() {
+    console.log('[BaseService] VITE_BACKEND_BASE_URL:', this.baseURL)
+    // Add more env vars to log as needed
+  }
+}
+
 // Token storage utilities
 const storeTokens = (tokens) => {
   localStorage.setItem('accessToken', tokens.accessToken)
@@ -20,9 +36,9 @@ const clearTokens = () => {
 }
 
 // Token Service for managing JWT tokens
-class TokenService {
+class TokenService extends BaseService {
   constructor() {
-    this.baseURL = import.meta.env.VITE_BACKEND_BASE_URL
+    super()
   }
 
   // Check if access token is expired
@@ -100,9 +116,9 @@ class TokenService {
 }
 
 // HTTP Client with auto-refresh capabilities
-class ApiClient {
+class ApiClient extends BaseService {
   constructor() {
-    this.baseURL = import.meta.env.VITE_BACKEND_BASE_URL
+    super()
     this.tokenService = new TokenService()
   }
 
@@ -172,8 +188,9 @@ class ApiClient {
 }
 
 // Authentication Service
-class AuthService {
+class AuthService extends BaseService {
   constructor() {
+    super()
     this.apiClient = new ApiClient()
     this.tokenService = new TokenService()
   }
@@ -220,4 +237,4 @@ export const apiClient = new ApiClient()
 export const authService = new AuthService()
 
 // Export utilities for backward compatibility
-export { storeTokens, clearTokens, TokenService, ApiClient, AuthService }
+export { storeTokens, clearTokens, TokenService, ApiClient, AuthService, BaseService }
