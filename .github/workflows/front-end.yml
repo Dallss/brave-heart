@@ -1,0 +1,42 @@
+name: Deploy Vue 3 Frontend
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "VITE_BACKEND_BASE_URL=https://api.example.com" >> .env
+            echo "VITE_BASE_URL=/" >> .env
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "VITE_BACKEND_BASE_URL=https://dev-api.example.com" >> .env
+            echo "VITE_BASE_URL=/develop/" >> .env
+          fi
+
+      - name: Build Vue app
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: ${{ github.ref_name == 'main' && '' || github.ref_name }}

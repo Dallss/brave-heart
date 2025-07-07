@@ -111,7 +111,7 @@ class TokenService extends BaseService {
     }
     clearTokens()
     // Redirect to login page
-    window.location.href = '/admin-login'
+    window.location.href = import.meta.env.VITE_BASE_URL.replace(/\/$/, '') + '/admin-login'
   }
 }
 
