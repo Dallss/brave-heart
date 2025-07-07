@@ -25,10 +25,10 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "VITE_BACKEND_BASE_URL=https://api.example.com" >> .env
-            echo "VITE_BASE_URL=/" >> .env
+            echo "VITE_BASE_URL=/brave-heart/" >> .env
           elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
             echo "VITE_BACKEND_BASE_URL=https://dev-api.example.com" >> .env
-            echo "VITE_BASE_URL=/develop/" >> .env
+            echo "VITE_BASE_URL=/brave-heart/develop/" >> .env
           fi
 
       - name: Build Vue app
