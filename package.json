@@ -8,10 +8,11 @@
     "dev:staging": "vite --mode staging",
     "dev:prod": "vite --mode production",
     "build": "vite build",
+    "postbuild": "cp dist/index.html dist/404.html",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "deploy": "gh-pages -d dist"
+    "deploy": "npm run build && npm run postbuild && gh-pages -d dist"
   },
   "dependencies": {
     "axios": "^1.10.0",
@@ -19,6 +20,7 @@
     "keen-slider": "^6.8.6",
     "npm": "^11.4.2",
     "pinia": "^3.0.1",
+    "pinia-plugin-persistedstate": "^3.2.3",
     "vue": "^3.5.13",
     "vue-router": "^4.5.1"
   },

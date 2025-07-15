@@ -31,13 +31,13 @@ defineProps({
 .modal {
   background: #fff;
   padding: 32px 50px 24px 50px;
-  border-radius: 12px;
-  width: 500px;
+  width: auto;
   box-shadow: 0 4px 24px rgba(90, 24, 24, 0.12);
   color: #5a1818;
   font-family: inherit;
   max-height: 75vh;
   overflow-y: auto;
+  padding: 3rem;
 }
 
 .modal h2 {

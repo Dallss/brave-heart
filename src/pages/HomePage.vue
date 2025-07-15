@@ -9,12 +9,10 @@ import ShopSection from '../sections/ShopSection.vue'
 <template>
   <div class="app-wrapper">
     <div class="header">
-      <button class="cart-button"></button>
+      <router-link to="/cart" class="cart-button"></router-link>
     </div>
     <HeadSection />
-
     <ShopSection id="shop" />
-
     <HowToUseSection id="how-to-use" />
     <FaqSection id="faq" />
     <AboutUsSection id="about-us" />
@@ -52,7 +50,7 @@ body::before {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  width: 100vw;
+  width: 100%;
   color: black;
 }
 

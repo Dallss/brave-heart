@@ -5,9 +5,10 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="items-container">
       <div class="item" v-for="product in allProducts" :key="product.id">
-        <Item :item="product" />
+        <Item :item="product" @show-details="openModal" />
       </div>
     </div>
+    <ProductDetailsModal :show="showModal" :product="selectedProduct" @close="closeModal" />
   </BaseSection>
 </template>
 
@@ -15,11 +16,14 @@
 import { ref, computed, onMounted } from 'vue'
 import BaseSection from './BaseSection.vue'
 import Item from '../components/Item.vue'
+import ProductDetailsModal from '../components/ProductDetailsModal.vue'
 import { apiClient } from '../utils/auth.js'
 
 const products = ref([])
 const loading = ref(true)
 const error = ref(null)
+const showModal = ref(false)
+const selectedProduct = ref(null)
 
 // Flatten all products from all types into a single array
 const allProducts = computed(() => {
@@ -60,6 +64,16 @@ const loadProducts = async () => {
   }
 }
 
+function openModal(product) {
+  selectedProduct.value = product
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  selectedProduct.value = null
+}
+
 onMounted(() => {
   loadProducts()
 })
@@ -92,14 +106,17 @@ onMounted(() => {
   color: #dc3545;
 }
 .items-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 10rem;
+  align-self: center;
+  width: 90%;
 }
 .item {
-  flex: 1 1 230px; /* Flex-grow: 1, shrink: 1, base width: 280px */
-  min-width: 120px; /* Won't shrink smaller than this */
+  width: 100%;
   max-width: 280px;
+  margin-left: auto;
+  margin-right: auto;
 }
 </style>

@@ -30,7 +30,7 @@ import BaseSection from './BaseSection.vue'
   color: #000000;
   display: flex;
   justify-content: center;
-  background-color: #e8e8e8;
+  background-color: white;
 }
 
 .about-us-content {

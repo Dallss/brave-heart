@@ -8,10 +8,12 @@ import OrdersTab from './components/admin/tab/OrdersTab.vue'
 import InventoryTab from './components/admin/tab/InventoryTab.vue'
 import CalndarTab from './components/admin/tab/CalndarTab.vue'
 import CustomersTab from './components/admin/tab/CustomersTab.vue'
+import CartPage from './pages/CartPage.vue'
 import { authService } from './utils/auth.js'
 
 const routes = [
   { path: '/', component: HomePage },
+  { path: '/cart', component: CartPage },
   { path: '/admin-login', component: AdminLogin },
   {
     path: '/admin',

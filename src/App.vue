@@ -30,18 +30,6 @@ body,
   color: black;
 }
 
-.cart-button {
-  height: 40%;
-  aspect-ratio: 1 / 1;
-  background-image: url('/shopping-cart.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  margin-left: auto;
-  border: none;
-  background-color: transparent;
-}
-
 .header {
   height: 55px;
   width: 100%;
@@ -58,17 +46,6 @@ body,
   height: 150px;
   z-index: 10;
 }
-/* TODO: Remove */
-/* .nav {
-  height: 0px;
-  margin-top: 70px;
-  width: 100%;
-  background-color: #00000089;
-  transition: height 0.3s ease;
-  overflow: hidden;
-  display: flex;
-  padding-left: 20px;
-} */
 
 .nav-hover-zone:hover .nav {
   height: 30px;

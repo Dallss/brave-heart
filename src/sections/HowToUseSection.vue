@@ -43,6 +43,7 @@ import BaseSection from './BaseSection.vue'
   justify-content: center;
   overflow: hidden;
   text-align: left;
+  padding: 0;
   padding-top: 200px;
   padding-bottom: 200px;
   width: 100%;
@@ -62,7 +63,6 @@ import BaseSection from './BaseSection.vue'
   font-weight: 550;
 } */
 .video {
-  margin-bottom: 2rem;
 }
 
 .how-to-use-steps {
