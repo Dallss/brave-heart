@@ -64,15 +64,16 @@ const loadProducts = async () => {
   }
 }
 
-function openModal(product) {
-  selectedProduct.value = product
-  showModal.value = true
-}
+// UPCOMING
+// function openModal(product) {
+//   selectedProduct.value = product
+//   showModal.value = true
+// }
 
-function closeModal() {
-  showModal.value = false
-  selectedProduct.value = null
-}
+// function closeModal() {
+//   showModal.value = false
+//   selectedProduct.value = null
+// }
 
 onMounted(() => {
   loadProducts()

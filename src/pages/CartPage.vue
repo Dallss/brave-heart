@@ -1,5 +1,6 @@
 <template>
-  <div class="cart-view-bg">
+  <div v-if="upcoming">upconing</div>
+  <div v-else class="cart-view-bg">
     <div class="cart-container">
       <button class="back-btn" @click="goBack">← Back</button>
       <h1 class="cart-title">Your Cart</h1>
@@ -37,6 +38,7 @@ import { useRouter } from 'vue-router'
 const cart = useCartStore()
 const router = useRouter()
 
+const upcoming = true
 function changeQty(item, newQty) {
   cart.updateQuantity(item.id, newQty)
 }

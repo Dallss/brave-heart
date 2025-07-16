@@ -54,7 +54,7 @@ body::before {
   color: black;
 }
 
-.cart-button {
+/* .cart-button {
   height: 40%;
   aspect-ratio: 1 / 1;
   background-image: url('/shopping-cart.png');
@@ -64,7 +64,7 @@ body::before {
   margin-left: auto;
   border: none;
   background-color: transparent;
-}
+} */
 
 .header {
   height: 55px;
